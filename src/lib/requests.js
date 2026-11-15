@@ -13,6 +13,23 @@ export async function getEmployeeRequests(userId) {
   return data
 }
 
+export async function getTodayEmployeeRequest(userId, workDate) {
+  const { data, error } = await getSupabaseClient()
+    .from('employee_requests')
+    .select('request_type, status')
+    .eq('user_id', userId)
+    .in('request_type', ['izin', 'sakit'])
+    .in('status', ['pending', 'approved'])
+    .lte('start_date', workDate)
+    .gte('end_date', workDate)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
 export async function submitEmployeeRequest(userId, request) {
   const { data, error } = await getSupabaseClient()
     .from('employee_requests')

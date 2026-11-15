@@ -4,7 +4,8 @@ import { Clock3, CalendarDays, MapPin, Camera, ArrowUpRight, CheckCircle2, Coffe
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 import { useAuth } from '../context/AuthContext'
-import { getTodayAttendance, submitCheckIn, submitCheckOut } from '../lib/attendance'
+import { getJakartaDate, getTodayAttendance, submitCheckIn, submitCheckOut } from '../lib/attendance'
+import { getTodayEmployeeRequest } from '../lib/requests'
 import { getWorkSchedule } from '../lib/workSchedule'
 
 function getTimeBasedGreeting() {
@@ -26,7 +27,11 @@ export default function Dashboard({ employeeProfile: profile }) {
   const [error, setError] = useState('')
   const [schedule, setSchedule] = useState(null)
   const [greeting] = useState(getTimeBasedGreeting)
+  const [typedGreeting, setTypedGreeting] = useState('')
   const [loadingAttendance, setLoadingAttendance] = useState(true)
+  const [todayRequest, setTodayRequest] = useState(null)
+  const [loadingTodayRequest, setLoadingTodayRequest] = useState(true)
+  const [todayRequestError, setTodayRequestError] = useState('')
   const [savingAttendance, setSavingAttendance] = useState(false)
   const [savingCheckOut, setSavingCheckOut] = useState(false)
   const [checkOutError, setCheckOutError] = useState('')
@@ -36,6 +41,23 @@ export default function Dashboard({ employeeProfile: profile }) {
 
   const now = new Date()
   const date = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const fullGreeting = `${greeting}, ${profile?.full_name || 'Karyawan'}`
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setTypedGreeting(fullGreeting)
+      return
+    }
+
+    let characterIndex = 0
+    const timer = window.setInterval(() => {
+      characterIndex += 1
+      setTypedGreeting(fullGreeting.slice(0, characterIndex))
+      if (characterIndex >= fullGreeting.length) window.clearInterval(timer)
+    }, 55)
+
+    return () => window.clearInterval(timer)
+  }, [fullGreeting])
 
   useEffect(() => {
     let active = true
@@ -63,6 +85,23 @@ export default function Dashboard({ employeeProfile: profile }) {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop())
       }
+    }
+  }, [user.id])
+
+  useEffect(() => {
+    let active = true
+    setLoadingTodayRequest(true)
+    setTodayRequestError('')
+    getTodayEmployeeRequest(user.id, getJakartaDate()).then((request) => {
+      if (active) setTodayRequest(request)
+    }).catch((loadError) => {
+      if (active) setTodayRequestError(loadError.message || 'Gagal memuat status pengajuan hari ini.')
+    }).finally(() => {
+      if (active) setLoadingTodayRequest(false)
+    })
+
+    return () => {
+      active = false
     }
   }, [user.id])
 
@@ -209,10 +248,23 @@ export default function Dashboard({ employeeProfile: profile }) {
   }
 
   const checkedOut = Boolean(attendance?.check_out_at)
+  const attendanceStatus = attendance
+    ? { label: 'Masuk', tone: 'present', note: 'Check-in tercatat hari ini.' }
+    : loadingAttendance || loadingTodayRequest
+      ? { label: 'Memeriksa...', tone: 'loading', note: 'Memuat status kehadiran hari ini.' }
+      : todayRequestError
+        ? { label: 'Tidak tersedia', tone: 'unavailable', note: todayRequestError }
+        : todayRequest
+          ? {
+              label: todayRequest.request_type === 'izin' ? 'Izin' : 'Sakit',
+              tone: todayRequest.request_type,
+              note: todayRequest.status === 'pending' ? 'Masih menunggu approval atasan.' : 'Pengajuan disetujui.',
+            }
+          : { label: 'Belum masuk', tone: 'absent', note: 'Belum ada absensi hari ini.' }
 
   return <div className="app-shell"><Sidebar/><main className="main-area"><Topbar title="Dashboard" subtitle="Ringkasan aktivitas kehadiran Anda"/>
     <div className="page-content">
-      <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1>{greeting}, {profile?.full_name || 'Karyawan'} <span>✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
+      <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1 aria-label={fullGreeting}><span className={`greeting-typing ${typedGreeting.length < fullGreeting.length ? 'typing' : ''}`} aria-hidden="true">{typedGreeting}</span> <span aria-hidden="true">✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
       <section className="attendance-hero">
         <div className="hero-content"><span className="hero-label"><i/> ABSENSI HARI INI</span><h2>{checkedIn ? 'Kehadiran berhasil dicatat.' : 'Siap memulai hari?'}</h2><p>{checkedIn ? 'Waktu check-in Anda sudah tercatat pada perangkat ini.' : 'Pastikan kamera dan lokasi aktif sebelum melakukan check-in.'}</p>
           <div className="hero-actions">
@@ -224,9 +276,10 @@ export default function Dashboard({ employeeProfile: profile }) {
       </section>
 
       <div className="section-heading"><div><h3>Ringkasan hari ini</h3><p>Pantau status kehadiran Anda.</p></div><Link className="text-action" to="/employee/attendance">Lihat riwayat <ArrowUpRight size={15}/></Link></div>
-      <div className="stats-grid">
+      <div className="stats-grid attendance-summary-grid">
         <div className="stat-card"><div className="stat-icon blue"><Clock3 size={19}/></div><span>Jam masuk</span><b>{attendance ? new Date(attendance.check_in_at).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'}) : '--:--'}</b><small>{checkedIn ? 'Tercatat hari ini' : loadingAttendance ? 'Memuat status absensi...' : 'Belum melakukan check-in'}</small></div>
         <div className="stat-card checkout-stat"><div className="stat-icon green"><CheckCircle2 size={19}/></div><span>Jam pulang</span><b>{attendance?.check_out_at ? new Date(attendance.check_out_at).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'}) : '--:--'}</b><small>{checkedOut ? 'Check-out tercatat hari ini' : attendance ? 'Anda sudah check-in' : 'Belum melakukan check-in'}</small><button type="button" className="checkout-button" onClick={handleCheckOut} disabled={!attendance || checkedOut || loadingAttendance || savingCheckOut}>{checkedOut ? 'Sudah Check Out' : savingCheckOut ? 'Menyimpan...' : 'Mulai Check Out'}</button>{checkOutError && <small className="checkout-error" role="alert">{checkOutError}</small>}</div>
+        <div className="stat-card"><div className={`stat-icon ${attendanceStatus.tone === 'present' ? 'green' : attendanceStatus.tone === 'izin' || attendanceStatus.tone === 'sakit' || attendanceStatus.tone === 'loading' ? 'amber' : 'red'}`}><CheckCircle2 size={19}/></div><span>Status kehadiran</span><b className={`attendance-status-value ${attendanceStatus.tone}`}>{attendanceStatus.label}</b><small role={todayRequestError && !attendance ? 'alert' : undefined}>{attendanceStatus.note}</small></div>
         <div className="stat-card"><div className="stat-icon amber"><Coffee size={19}/></div><span>Total jam kerja</span><b>0j 00m</b><small>Akumulasi hari ini</small></div>
       </div>
 
