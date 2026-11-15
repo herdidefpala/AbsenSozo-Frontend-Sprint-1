@@ -108,6 +108,10 @@ create table if not exists public.attendance_records (
   work_date date not null,
   check_in_at timestamptz not null default now(),
   check_out_at timestamptz,
+  check_out_latitude double precision,
+  check_out_longitude double precision,
+  check_out_accuracy_m integer,
+  check_out_photo_path text,
   scheduled_start_time time not null default '08:00',
   latitude double precision not null check (latitude between -90 and 90),
   longitude double precision not null check (longitude between -180 and 180),
@@ -143,6 +147,18 @@ add column if not exists scheduled_start_time time not null default '08:00';
 
 alter table public.attendance_records
 add column if not exists check_out_at timestamptz;
+
+alter table public.attendance_records
+add column if not exists check_out_latitude double precision;
+
+alter table public.attendance_records
+add column if not exists check_out_longitude double precision;
+
+alter table public.attendance_records
+add column if not exists check_out_accuracy_m integer;
+
+alter table public.attendance_records
+add column if not exists check_out_photo_path text;
 
 create or replace function public.set_attendance_check_in()
 returns trigger
@@ -196,6 +212,9 @@ returns trigger
 language plpgsql
 set search_path = ''
 as $$
+declare
+  office public.office_locations%rowtype;
+  distance_m double precision;
 begin
   if (select auth.uid()) is distinct from old.user_id then
     raise exception 'Anda hanya dapat melakukan check-out pada absensi sendiri.';
@@ -203,6 +222,35 @@ begin
   if old.check_out_at is not null then
     raise exception 'Check-out sudah tercatat.';
   end if;
+
+  if new.check_out_latitude is null or new.check_out_latitude not between -90 and 90
+    or new.check_out_longitude is null or new.check_out_longitude not between -180 and 180
+    or new.check_out_accuracy_m is null or new.check_out_accuracy_m <= 0
+    or new.check_out_photo_path is null then
+    raise exception 'Foto dan lokasi wajib disertakan untuk check-out.';
+  end if;
+  if split_part(new.check_out_photo_path, '/', 1) <> old.user_id::text
+    or split_part(new.check_out_photo_path, '/', 2) <> old.work_date::text then
+    raise exception 'Foto check-out tidak sesuai dengan akun atau tanggal absensi.';
+  end if;
+
+  select * into office
+  from public.office_locations
+  where id = 'default';
+  if office.latitude is null or office.longitude is null then
+    raise exception 'Lokasi kantor belum diatur oleh administrator.';
+  end if;
+
+  distance_m := 6371000::double precision * 2 * asin(sqrt(least(
+    1::double precision,
+    power(sin(radians(new.check_out_latitude - office.latitude) / 2), 2)
+      + cos(radians(office.latitude)) * cos(radians(new.check_out_latitude))
+      * power(sin(radians(new.check_out_longitude - office.longitude) / 2), 2)
+  )));
+  if distance_m > office.radius_m then
+    raise exception 'Check-out ditolak: posisi berada di luar radius kantor.';
+  end if;
+
   new.check_out_at := now();
   return new;
 end;
@@ -307,6 +355,10 @@ with check (
   user_id = (select auth.uid())
   and (select public.is_employee())
   and check_out_at is not null
+  and check_out_latitude between -90 and 90
+  and check_out_longitude between -180 and 180
+  and check_out_accuracy_m > 0
+  and split_part(check_out_photo_path, '/', 1) = (select auth.uid())::text
 );
 
 drop policy if exists "Users can read own or admins read all employee requests" on public.employee_requests;
@@ -341,8 +393,7 @@ grant select on public.employee_requests to authenticated;
 grant insert (user_id, request_type, start_date, end_date, reason) on public.employee_requests to authenticated;
 grant update (status, admin_note) on public.employee_requests to authenticated;
 revoke update on public.attendance_records from authenticated;
-revoke update (check_out_at) on public.attendance_records from authenticated;
-grant update (check_out_at) on public.attendance_records to authenticated;
+grant update (check_out_at, check_out_latitude, check_out_longitude, check_out_accuracy_m, check_out_photo_path) on public.attendance_records to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('attendance-photos', 'attendance-photos', false, 5242880, array['image/jpeg'])

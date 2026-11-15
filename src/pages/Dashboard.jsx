@@ -18,6 +18,7 @@ function getTimeBasedGreeting() {
 
 export default function Dashboard({ employeeProfile: profile }) {
   const [checkedIn, setCheckedIn] = useState(false)
+  const [checkoutMode, setCheckoutMode] = useState(false)
   const [attendance, setAttendance] = useState(null)
   const [photoData, setPhotoData] = useState('')
   const [location, setLocation] = useState(null)
@@ -34,7 +35,6 @@ export default function Dashboard({ employeeProfile: profile }) {
   const [todayRequestError, setTodayRequestError] = useState('')
   const [savingAttendance, setSavingAttendance] = useState(false)
   const [savingCheckOut, setSavingCheckOut] = useState(false)
-  const [checkOutError, setCheckOutError] = useState('')
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const { user } = useAuth()
@@ -206,6 +206,16 @@ export default function Dashboard({ employeeProfile: profile }) {
     )
   }
 
+  const startCheckOut = () => {
+    stopCamera()
+    setCheckoutMode(true)
+    setPhotoData('')
+    setLocation(null)
+    setLocationStatus('Lokasi belum aktif')
+    setError('')
+    void startCamera()
+  }
+
   const handleCheckIn = async () => {
     if (loadingAttendance || savingAttendance) return
     if (!photoData) {
@@ -234,14 +244,25 @@ export default function Dashboard({ employeeProfile: profile }) {
 
   const handleCheckOut = async () => {
     if (!attendance || attendance.check_out_at || loadingAttendance || savingCheckOut) return
+    if (!photoData) {
+      setError('Ambil foto selfie untuk check-out terlebih dahulu.')
+      return
+    }
 
-    setCheckOutError('')
+    if (!location) {
+      setError('Aktifkan GPS untuk memvalidasi lokasi check-out.')
+      return
+    }
+
+    setError('')
     setSavingCheckOut(true)
     try {
-      const savedCheckOut = await submitCheckOut(user.id)
-      setAttendance((current) => current ? { ...current, check_out_at: savedCheckOut.check_out_at } : current)
+      const savedCheckOut = await submitCheckOut({ user, photoData, location })
+      setAttendance((current) => current ? { ...current, ...savedCheckOut } : current)
+      setCheckoutMode(false)
+      setCameraStatus('Foto check-out berhasil tersimpan')
     } catch (checkOutSaveError) {
-      setCheckOutError(checkOutSaveError.message || 'Gagal menyimpan check-out. Silakan coba lagi.')
+      setError(checkOutSaveError.message || 'Gagal menyimpan check-out. Silakan coba lagi.')
     } finally {
       setSavingCheckOut(false)
     }
@@ -266,9 +287,12 @@ export default function Dashboard({ employeeProfile: profile }) {
     <div className="page-content">
       <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1 aria-label={fullGreeting}><span className={`greeting-typing ${typedGreeting.length < fullGreeting.length ? 'typing' : ''}`} aria-hidden="true">{typedGreeting}</span> <span aria-hidden="true">✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
       <section className="attendance-hero">
-        <div className="hero-content"><span className="hero-label"><i/> ABSENSI HARI INI</span><h2>{checkedIn ? 'Kehadiran berhasil dicatat.' : 'Siap memulai hari?'}</h2><p>{checkedIn ? 'Waktu check-in Anda sudah tercatat pada perangkat ini.' : 'Pastikan kamera dan lokasi aktif sebelum melakukan check-in.'}</p>
+        <div className="hero-content"><span className="hero-label"><i/> ABSENSI HARI INI</span><h2>{checkoutMode ? 'Selesaikan check-out Anda.' : checkedIn ? 'Kehadiran berhasil dicatat.' : 'Siap memulai hari?'}</h2><p>{checkoutMode ? 'Ambil foto dan cek lokasi terbaru sebelum konfirmasi check-out.' : checkedIn ? 'Waktu check-in Anda sudah tercatat pada perangkat ini.' : 'Pastikan kamera dan lokasi aktif sebelum melakukan check-in.'}</p>
           <div className="hero-actions">
-            <button className="white-button" onClick={checkedIn ? undefined : startCamera}><Camera size={17}/> {checkedIn ? 'Sudah Check In' : cameraEnabled ? 'Kamera aktif' : 'Mulai Check In'}</button>
+            <div className="hero-action-buttons">
+              <button type="button" className="white-button" onClick={startCamera} disabled={checkedIn || loadingAttendance}><Camera size={17}/> {checkedIn ? 'Sudah Check In' : cameraEnabled ? 'Kamera aktif' : 'Mulai Check In'}</button>
+              <button type="button" className="checkout-hero-button" onClick={startCheckOut} disabled={!attendance || checkedOut || loadingAttendance || savingCheckOut}><CheckCircle2 size={17}/>{checkedOut ? 'Sudah Check Out' : checkoutMode ? 'Ulangi Check Out' : savingCheckOut ? 'Menyimpan...' : 'Mulai Check Out'}</button>
+            </div>
             <span><MapPin size={15}/> {location ? 'Lokasi terdeteksi' : 'Lokasi akan diverifikasi'}</span>
           </div>
         </div>
@@ -278,18 +302,18 @@ export default function Dashboard({ employeeProfile: profile }) {
       <div className="section-heading"><div><h3>Ringkasan hari ini</h3><p>Pantau status kehadiran Anda.</p></div><Link className="text-action" to="/employee/attendance">Lihat riwayat <ArrowUpRight size={15}/></Link></div>
       <div className="stats-grid attendance-summary-grid">
         <div className="stat-card"><div className="stat-icon blue"><Clock3 size={19}/></div><span>Jam masuk</span><b>{attendance ? new Date(attendance.check_in_at).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'}) : '--:--'}</b><small>{checkedIn ? 'Tercatat hari ini' : loadingAttendance ? 'Memuat status absensi...' : 'Belum melakukan check-in'}</small></div>
-        <div className="stat-card checkout-stat"><div className="stat-icon green"><CheckCircle2 size={19}/></div><span>Jam pulang</span><b>{attendance?.check_out_at ? new Date(attendance.check_out_at).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'}) : '--:--'}</b><small>{checkedOut ? 'Check-out tercatat hari ini' : attendance ? 'Anda sudah check-in' : 'Belum melakukan check-in'}</small><button type="button" className="checkout-button" onClick={handleCheckOut} disabled={!attendance || checkedOut || loadingAttendance || savingCheckOut}>{checkedOut ? 'Sudah Check Out' : savingCheckOut ? 'Menyimpan...' : 'Mulai Check Out'}</button>{checkOutError && <small className="checkout-error" role="alert">{checkOutError}</small>}</div>
+        <div className="stat-card"><div className="stat-icon green"><CheckCircle2 size={19}/></div><span>Jam pulang</span><b>{attendance?.check_out_at ? new Date(attendance.check_out_at).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'}) : '--:--'}</b><small>{checkedOut ? 'Check-out tercatat hari ini' : attendance ? 'Anda sudah check-in' : 'Belum melakukan check-in'}</small></div>
         <div className="stat-card"><div className={`stat-icon ${attendanceStatus.tone === 'present' ? 'green' : attendanceStatus.tone === 'izin' || attendanceStatus.tone === 'sakit' || attendanceStatus.tone === 'loading' ? 'amber' : 'red'}`}><CheckCircle2 size={19}/></div><span>Status kehadiran</span><b className={`attendance-status-value ${attendanceStatus.tone}`}>{attendanceStatus.label}</b><small role={todayRequestError && !attendance ? 'alert' : undefined}>{attendanceStatus.note}</small></div>
         <div className="stat-card"><div className="stat-icon amber"><Coffee size={19}/></div><span>Total jam kerja</span><b>0j 00m</b><small>Akumulasi hari ini</small></div>
       </div>
 
       <div className="lower-grid">
         <section className="panel attendance-panel">
-          <div className="panel-heading"><div><h3>Check-in dengan kamera & lokasi</h3><p>Verifikasi identitas dan posisi Anda saat masuk kerja.</p></div></div>
+          <div className="panel-heading"><div><h3>{checkoutMode ? 'Check-out dengan kamera & lokasi' : 'Check-in dengan kamera & lokasi'}</h3><p>{checkoutMode ? 'Ambil foto baru dan verifikasi posisi Anda saat pulang kerja.' : 'Verifikasi identitas dan posisi Anda saat masuk kerja.'}</p></div></div>
 
           <div className="attendance-console">
             <div className="camera-stage">
-              {photoData ? <img src={photoData} alt="Foto absensi" /> : <video ref={videoRef} autoPlay muted playsInline />}
+              {photoData ? <img src={photoData} alt={`Foto ${checkoutMode ? 'check-out' : 'check-in'}`} /> : <video ref={videoRef} autoPlay muted playsInline />}
               {!photoData && !cameraEnabled && <div className="camera-placeholder"><Camera size={28} /><span>Kamera belum aktif</span></div>}
             </div>
 
@@ -313,11 +337,11 @@ export default function Dashboard({ employeeProfile: profile }) {
             </div>
 
             {error && <div className="form-message error"><AlertCircle size={16}/> {error}</div>}
-            {checkedIn && !error && <div className="form-message success"><Check size={16}/> Check-in berhasil disimpan.</div>}
+            {checkedIn && !error && !checkoutMode && <div className="form-message success"><Check size={16}/> {checkedOut ? 'Check-out berhasil disimpan.' : 'Check-in berhasil disimpan.'}</div>}
 
-            <button type="button" className="primary-button full-width" onClick={handleCheckIn} disabled={checkedIn || loadingAttendance || savingAttendance}>
-            {checkedIn ? 'Sudah check-in' : savingAttendance ? 'Menyimpan absensi...' : loadingAttendance ? 'Memeriksa status...' : 'Konfirmasi check-in'}
-            </button>
+            {(!checkedIn || checkoutMode) && <button type="button" className="primary-button full-width" onClick={checkoutMode ? handleCheckOut : handleCheckIn} disabled={checkoutMode ? !attendance || checkedOut || loadingAttendance || savingCheckOut : checkedIn || loadingAttendance || savingAttendance}>
+              {checkoutMode ? savingCheckOut ? 'Menyimpan check-out...' : 'Konfirmasi check-out' : savingAttendance ? 'Menyimpan absensi...' : loadingAttendance ? 'Memeriksa status...' : 'Konfirmasi check-in'}
+            </button>}
           </div>
         </section>
 

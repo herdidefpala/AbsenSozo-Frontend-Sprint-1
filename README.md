@@ -57,8 +57,8 @@
 - Karyawan dapat melihat rekap absensinya sendiri; halaman rekap tidak menyediakan aksi edit atau hapus.
 - Karyawan dapat mengirim pengajuan izin, sakit, cuti, atau lainnya dan melihat statusnya. Admin dapat meninjau pengajuan satu kali serta menambahkan catatan.
 - Check-in hanya dapat dibuat sekali per user per hari. Timestamp dan tanggal WIB ditetapkan oleh trigger database.
-- Karyawan dapat melakukan check-out satu kali setelah check-in. Waktu check-out ditetapkan oleh database dan tidak dapat diubah dari aplikasi.
-- Koordinat GPS berasal dari browser dan jaraknya terhadap titik kantor divalidasi oleh trigger database. Validasi ini tidak mendeteksi pemalsuan GPS; koordinat dari browser tetap dapat dimanipulasi.
+- Karyawan dapat melakukan check-out satu kali setelah check-in dengan foto kamera dan GPS terbaru. Waktu check-out ditetapkan oleh database dan lokasi divalidasi terhadap radius kantor.
+- Koordinat check-in/check-out berasal dari browser dan jaraknya terhadap titik kantor divalidasi oleh trigger database. Validasi ini tidak mendeteksi pemalsuan GPS; koordinat dari browser tetap dapat dimanipulasi.
 - Kamera dan GPS memerlukan izin browser dan secure context (HTTPS, atau localhost).
 - Akun administrator dibuat di Supabase Dashboard. Administrator dapat mengganti kata sandi dari menu **Pengaturan**; pemulihan kata sandi jika tidak bisa login belum tersedia di aplikasi.
 - Pendaftaran mandiri membuat profil berdasarkan nama, kode karyawan, dan departemen yang diisi pengguna. Konfirmasi email membuktikan akses ke email, bukan status kepegawaiannya; untuk penggunaan operasional pertimbangkan persetujuan admin atau validasi kode terhadap daftar karyawan resmi.

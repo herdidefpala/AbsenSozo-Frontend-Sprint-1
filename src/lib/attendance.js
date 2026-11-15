@@ -100,20 +100,50 @@ export async function submitCheckIn({ user, photoData, location }) {
   return data
 }
 
-export async function submitCheckOut(userId) {
-  const { data, error } = await getSupabaseClient()
+export async function submitCheckOut({ user, photoData, location }) {
+  const client = getSupabaseClient()
+  const date = getJakartaDate()
+  const photoBlob = await (await fetch(photoData)).blob()
+  const photoPath = `${user.id}/${date}/checkout-${crypto.randomUUID()}.jpg`
+  const { error: uploadError } = await client.storage
+    .from('attendance-photos')
+    .upload(photoPath, photoBlob, {
+      contentType: 'image/jpeg',
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+  if (uploadError) throw uploadError
+
+  const { data, error } = await client
     .from('attendance_records')
-    .update({ check_out_at: new Date().toISOString() })
-    .eq('user_id', userId)
-    .eq('work_date', getJakartaDate())
+    .update({
+      check_out_at: new Date().toISOString(),
+      check_out_latitude: location.lat,
+      check_out_longitude: location.lng,
+      check_out_accuracy_m: location.accuracy,
+      check_out_photo_path: photoPath,
+    })
+    .eq('user_id', user.id)
+    .eq('work_date', date)
     .is('check_out_at', null)
-    .select('id, user_id, work_date, check_in_at, check_out_at')
+    .select('id, user_id, work_date, check_in_at, check_out_at, check_out_latitude, check_out_longitude, check_out_accuracy_m, check_out_photo_path')
     .maybeSingle()
 
-  if (error) throw error
-  if (!data) {
+  if (error || !data) {
+    const { error: cleanupError } = await client.storage
+      .from('attendance-photos')
+      .remove([photoPath])
+
+    if (cleanupError) {
+      const saveError = error ? error.message : 'Check-out tidak dapat dilakukan. Pastikan Anda sudah check-in dan belum check-out.'
+      throw new Error(`${saveError} Foto gagal dibersihkan dari storage: ${cleanupError.message}`)
+    }
+
+    if (error) throw error
     throw new Error('Check-out tidak dapat dilakukan. Pastikan Anda sudah check-in dan belum check-out.')
   }
+
   return data
 }
 
