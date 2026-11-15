@@ -1,10 +1,11 @@
 import { Bell, Search, ChevronDown } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import Brand from './Brand'
 
 export default function Topbar({ title, subtitle, admin = false }) {
   const { user } = useAuth()
   return <header className="topbar">
-    <div><div className="topbar-title">{title}</div><div className="topbar-subtitle">{subtitle}</div></div>
+    <div className="topbar-heading"><div className="topbar-mobile-brand"><Brand/></div><div><div className="topbar-title">{title}</div><div className="topbar-subtitle">{subtitle}</div></div></div>
     <div className="topbar-actions">
       <button className="icon-button search-button" aria-label="Cari"><Search size={18}/></button>
       <button className="icon-button notification-button" aria-label="Notifikasi"><Bell size={18}/><i/></button>

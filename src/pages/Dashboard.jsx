@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { Clock3, CalendarDays, MapPin, Camera, ArrowUpRight, CheckCircle2, Coffee, ChevronRight, LocateFixed, AlertCircle, Check, VideoOff } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Clock3, CalendarDays, MapPin, Camera, ArrowUpRight, CheckCircle2, Coffee, ChevronRight, LocateFixed, AlertCircle, Check, VideoOff, Sparkles, X } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 import { useAuth } from '../context/AuthContext'
 import { getEmployeeProfile, getTodayAttendance, submitCheckIn } from '../lib/attendance'
 import { getWorkSchedule } from '../lib/workSchedule'
+
+function getTimeBasedGreeting() {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 11) return 'Selamat pagi'
+  if (hour >= 11 && hour < 15) return 'Selamat siang'
+  if (hour >= 15 && hour < 18) return 'Selamat sore'
+  return 'Selamat malam'
+}
 
 export default function Dashboard() {
   const [checkedIn, setCheckedIn] = useState(false)
@@ -17,6 +26,8 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [profile, setProfile] = useState(null)
   const [schedule, setSchedule] = useState(null)
+  const [greeting] = useState(getTimeBasedGreeting)
+  const [showGreeting, setShowGreeting] = useState(true)
   const [loadingAttendance, setLoadingAttendance] = useState(true)
   const [savingAttendance, setSavingAttendance] = useState(false)
   const videoRef = useRef(null)
@@ -25,6 +36,11 @@ export default function Dashboard() {
 
   const now = new Date()
   const date = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setShowGreeting(false), 5000)
+    return () => window.clearTimeout(timeout)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -185,18 +201,18 @@ export default function Dashboard() {
 
   return <div className="app-shell"><Sidebar/><main className="main-area"><Topbar title="Dashboard" subtitle="Ringkasan aktivitas kehadiran Anda"/>
     <div className="page-content">
-      <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1>Selamat pagi, {profile?.full_name || user.email} <span>✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
+      <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1>{greeting}, {profile?.full_name || user.email} <span>✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
       <section className="attendance-hero">
         <div className="hero-content"><span className="hero-label"><i/> ABSENSI HARI INI</span><h2>{checkedIn ? 'Kehadiran berhasil dicatat.' : 'Siap memulai hari?'}</h2><p>{checkedIn ? 'Waktu check-in Anda sudah tercatat pada perangkat ini.' : 'Pastikan kamera dan lokasi aktif sebelum melakukan check-in.'}</p>
           <div className="hero-actions">
             <button className="white-button" onClick={checkedIn ? undefined : startCamera}><Camera size={17}/> {checkedIn ? 'Sudah Check In' : cameraEnabled ? 'Kamera aktif' : 'Mulai Check In'}</button>
-            <span><MapPin size={15}/> {location ? 'Lokasi valid' : 'Lokasi akan diverifikasi'}</span>
+            <span><MapPin size={15}/> {location ? 'Lokasi terdeteksi' : 'Lokasi akan diverifikasi'}</span>
           </div>
         </div>
         <div className="hero-time"><span>WAKTU SEKARANG</span><strong>{now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</strong><small>WIB · Waktu perangkat</small></div>
       </section>
 
-      <div className="section-heading"><div><h3>Ringkasan hari ini</h3><p>Pantau status kehadiran Anda.</p></div><button className="text-action">Lihat riwayat <ArrowUpRight size={15}/></button></div>
+      <div className="section-heading"><div><h3>Ringkasan hari ini</h3><p>Pantau status kehadiran Anda.</p></div><Link className="text-action" to="/employee/attendance">Lihat riwayat <ArrowUpRight size={15}/></Link></div>
       <div className="stats-grid">
         <div className="stat-card"><div className="stat-icon blue"><Clock3 size={19}/></div><span>Jam masuk</span><b>{attendance ? new Date(attendance.check_in_at).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'}) : '--:--'}</b><small>{checkedIn ? 'Tercatat hari ini' : loadingAttendance ? 'Memuat status absensi...' : 'Belum melakukan check-in'}</small></div>
         <div className="stat-card"><div className="stat-icon green"><CheckCircle2 size={19}/></div><span>Jam pulang</span><b>--:--</b><small>Belum melakukan check-out</small></div>
@@ -249,7 +265,13 @@ export default function Dashboard() {
           <div className="profile-line"><span>Lokasi saat ini</span><b>{location ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : 'Belum tersimpan'}</b></div>
         </section>
       </div>
-      <div className="preview-footnote">Foto dan data lokasi disimpan di Supabase. Verifikasi radius kantor belum diaktifkan.</div>
+      <div className="preview-footnote">Foto dan data lokasi disimpan di Supabase. Check-in divalidasi terhadap radius kantor.</div>
     </div>
-  </main></div>
+  </main>
+    {showGreeting && <div className="employee-greeting-toast" role="status" aria-live="polite">
+      <span className="greeting-toast-icon"><Sparkles size={17}/></span>
+      <div><b>{greeting}{profile?.full_name ? `, ${profile.full_name}` : ''}!</b><span>Selamat datang di AbsenSozo.</span></div>
+      <button type="button" aria-label="Tutup sapaan" onClick={() => setShowGreeting(false)}><X size={15}/></button>
+    </div>}
+  </div>
 }

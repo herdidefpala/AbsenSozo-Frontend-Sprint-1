@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, CalendarCheck, Clock3, MapPin, FileBarChart, Settings, LogOut, Fingerprint } from 'lucide-react'
+import { LayoutDashboard, Users, CalendarCheck, Clock3, MapPin, FileBarChart, FileText, Settings, LogOut, Fingerprint } from 'lucide-react'
 import Brand from './Brand'
 import { useAuth } from '../context/AuthContext'
 
 const employeeLinks = [
   { to: '/employee', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/employee/requests', label: 'Pengajuan', icon: FileText },
   { to: '/employee/attendance', label: 'Rekap Absensi', icon: CalendarCheck },
 ]
 const adminLinks = [

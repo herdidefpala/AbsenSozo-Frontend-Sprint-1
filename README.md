@@ -24,6 +24,7 @@
 ## Preview route
 - `/` — Login
 - `/employee` — Dashboard karyawan
+- `/employee/requests` — Menu Pengajuan karyawan
 - `/employee/attendance` — Rekap absensi karyawan (hanya baca)
 - `/admin` — Dashboard admin
 
