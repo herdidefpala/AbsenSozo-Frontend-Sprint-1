@@ -86,7 +86,7 @@ export default function AdminAttendance() {
 
   return <div className="app-shell"><Sidebar admin/><main className="main-area"><Topbar admin title="Data Absensi" subtitle="Pantau catatan kehadiran karyawan"/>
     <div className="page-content">
-      <div className="welcome-row"><div><div className="page-eyebrow">ADMINISTRATION</div><h1>Data Absensi</h1><p>Periksa dan telusuri catatan check-in karyawan.</p></div><div className="date-pill"><CalendarDays size={15}/>{formatDate(workDate)}</div></div>
+    <div className="welcome-row"><div><div className="page-eyebrow">ADMINISTRATION</div><h1>Data Absensi</h1><p>Periksa dan telusuri catatan check-in karyawan.</p></div><div className="date-pill"><CalendarDays size={15}/>{formatDate(workDate)}</div></div>
 
       <section className="panel attendance-list-panel">
         <div className="attendance-filters">
@@ -126,6 +126,7 @@ export default function AdminAttendance() {
         <div className="attendance-detail-meta">
           <div><span>Jam masuk</span><b>{formatTime(selectedRecord.check_in_at)} WIB</b></div>
           <div><span>Status</span><b className={selectedRecord.late ? 'detail-late' : 'detail-ontime'}>{selectedRecord.late ? 'Terlambat' : 'Tepat waktu'}</b></div>
+          <div><span>Batas jam masuk</span><b>{selectedRecord.scheduled_start_time.slice(0, 5)} WIB</b></div>
           <div><span>Departemen</span><b>{selectedRecord.employee.department}</b></div>
           <div><span>Akurasi lokasi</span><b>{selectedRecord.accuracy_m} m</b></div>
         </div>

@@ -75,11 +75,39 @@ $$;
 revoke all on function public.is_employee() from public;
 grant execute on function public.is_employee() to authenticated;
 
+create table if not exists public.work_schedules (
+  id text primary key default 'default' check (id = 'default'),
+  start_time time not null default '08:00',
+  end_time time not null default '17:00',
+  updated_at timestamptz not null default now(),
+  check (end_time > start_time)
+);
+
+insert into public.work_schedules (id)
+values ('default')
+on conflict (id) do nothing;
+
+create table if not exists public.office_locations (
+  id text primary key default 'default' check (id = 'default'),
+  latitude double precision,
+  longitude double precision,
+  radius_m integer not null default 100 check (radius_m between 1 and 10000),
+  updated_at timestamptz not null default now(),
+  check ((latitude is null and longitude is null) or (latitude is not null and longitude is not null)),
+  check (latitude is null or latitude between -90 and 90),
+  check (longitude is null or longitude between -180 and 180)
+);
+
+insert into public.office_locations (id)
+values ('default')
+on conflict (id) do nothing;
+
 create table if not exists public.attendance_records (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   work_date date not null,
   check_in_at timestamptz not null default now(),
+  scheduled_start_time time not null default '08:00',
   latitude double precision not null check (latitude between -90 and 90),
   longitude double precision not null check (longitude between -180 and 180),
   accuracy_m integer not null check (accuracy_m > 0),
@@ -88,15 +116,46 @@ create table if not exists public.attendance_records (
   unique (user_id, work_date)
 );
 
+alter table public.attendance_records
+add column if not exists scheduled_start_time time not null default '08:00';
+
 create or replace function public.set_attendance_check_in()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
+declare
+  office public.office_locations%rowtype;
+  distance_m double precision;
 begin
   new.user_id := coalesce((select auth.uid()), new.user_id);
   new.work_date := (now() at time zone 'Asia/Jakarta')::date;
   new.check_in_at := now();
+  select * into office
+  from public.office_locations
+  where id = 'default';
+  if office.latitude is null or office.longitude is null then
+    raise exception 'Lokasi kantor belum diatur oleh administrator.';
+  end if;
+
+  distance_m := 6371000::double precision * 2 * asin(sqrt(least(
+    1::double precision,
+    power(sin(radians(new.latitude - office.latitude) / 2), 2)
+      + cos(radians(office.latitude)) * cos(radians(new.latitude))
+      * power(sin(radians(new.longitude - office.longitude) / 2), 2)
+  )));
+  if distance_m > office.radius_m then
+    raise exception 'Check-in ditolak: posisi berada di luar radius kantor.';
+  end if;
+
+  new.scheduled_start_time := (
+    select start_time
+    from public.work_schedules
+    where id = 'default'
+  );
+  if new.scheduled_start_time is null then
+    raise exception 'Jadwal kerja standar belum tersedia.';
+  end if;
   new.created_at := now();
   return new;
 end;
@@ -109,6 +168,30 @@ for each row execute function public.set_attendance_check_in();
 
 alter table public.employee_profiles enable row level security;
 alter table public.attendance_records enable row level security;
+alter table public.work_schedules enable row level security;
+alter table public.office_locations enable row level security;
+
+drop policy if exists "Authenticated users can read work schedule" on public.work_schedules;
+create policy "Authenticated users can read work schedule"
+on public.work_schedules for select to authenticated
+using (true);
+
+drop policy if exists "Admins can update work schedule" on public.work_schedules;
+create policy "Admins can update work schedule"
+on public.work_schedules for update to authenticated
+using ((select public.is_admin()))
+with check ((select public.is_admin()));
+
+drop policy if exists "Authenticated users can read office location" on public.office_locations;
+create policy "Authenticated users can read office location"
+on public.office_locations for select to authenticated
+using (true);
+
+drop policy if exists "Admins can update office location" on public.office_locations;
+create policy "Admins can update office location"
+on public.office_locations for update to authenticated
+using ((select public.is_admin()))
+with check ((select public.is_admin()));
 
 drop policy if exists "Employees can read own profile" on public.employee_profiles;
 create policy "Employees can read own profile"
@@ -141,6 +224,9 @@ with check (
 );
 
 grant select on public.employee_profiles to authenticated;
+grant update on public.employee_profiles to authenticated;
+grant select, update on public.work_schedules to authenticated;
+grant select, update on public.office_locations to authenticated;
 grant insert, select on public.attendance_records to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

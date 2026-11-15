@@ -4,7 +4,11 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminAttendance from './pages/AdminAttendance'
-import AdminSection from './pages/AdminSection'
+import AdminEmployees from './pages/AdminEmployees'
+import AdminLocations from './pages/AdminLocations'
+import AdminReports from './pages/AdminReports'
+import AdminSchedule from './pages/AdminSchedule'
+import AdminSettings from './pages/AdminSettings'
 import { useAuth } from './context/AuthContext'
 import { getEmployeeProfile } from './lib/attendance'
 
@@ -60,11 +64,11 @@ export default function App() {
     <Route path="/employee" element={<AuthRoute role="employee"><Dashboard /></AuthRoute>} />
     <Route path="/admin" element={<AuthRoute role="admin"><AdminDashboard /></AuthRoute>} />
     <Route path="/admin/attendance" element={<AuthRoute role="admin"><AdminAttendance /></AuthRoute>} />
-    <Route path="/admin/employees" element={<AuthRoute role="admin"><AdminSection title="Karyawan" description="Pengelolaan profil karyawan akan tersedia pada tahap berikutnya." /></AuthRoute>} />
-    <Route path="/admin/schedule" element={<AuthRoute role="admin"><AdminSection title="Jadwal Kerja" description="Pengaturan jadwal kerja akan tersedia pada tahap berikutnya." /></AuthRoute>} />
-    <Route path="/admin/locations" element={<AuthRoute role="admin"><AdminSection title="Lokasi Kantor" description="Pengelolaan lokasi kantor akan tersedia pada tahap berikutnya." /></AuthRoute>} />
-    <Route path="/admin/reports" element={<AuthRoute role="admin"><AdminSection title="Laporan" description="Laporan kehadiran akan tersedia pada tahap berikutnya." /></AuthRoute>} />
-    <Route path="/admin/settings" element={<AuthRoute role="admin"><AdminSection title="Pengaturan" description="Pengaturan aplikasi akan tersedia pada tahap berikutnya." /></AuthRoute>} />
+    <Route path="/admin/employees" element={<AuthRoute role="admin"><AdminEmployees /></AuthRoute>} />
+    <Route path="/admin/schedule" element={<AuthRoute role="admin"><AdminSchedule /></AuthRoute>} />
+    <Route path="/admin/locations" element={<AuthRoute role="admin"><AdminLocations /></AuthRoute>} />
+    <Route path="/admin/reports" element={<AuthRoute role="admin"><AdminReports /></AuthRoute>} />
+    <Route path="/admin/settings" element={<AuthRoute role="admin"><AdminSettings /></AuthRoute>} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 }

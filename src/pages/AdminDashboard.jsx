@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   const stats = [
     { label: 'Total karyawan', value: overview?.totalEmployees ?? '—', note: 'Profil karyawan terdaftar', icon: Users, tone: 'blue' },
     { label: 'Hadir hari ini', value: overview?.present ?? '—', note: 'Check-in tersimpan', icon: UserCheck, tone: 'green' },
-    { label: 'Terlambat', value: overview?.late ?? '—', note: 'Check-in setelah 08:00 WIB', icon: Clock3, tone: 'amber' },
+    { label: 'Terlambat', value: overview?.late ?? '—', note: 'Mengacu pada jadwal saat check-in', icon: Clock3, tone: 'amber' },
     { label: 'Belum hadir', value: overview?.absent ?? '—', note: 'Belum check-in hari ini', icon: UserX, tone: 'red' },
   ]
   const attendanceRate = overview?.totalEmployees
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
           {loading && <tr><td colSpan="4">Memuat absensi...</td></tr>}
         </tbody></table></div>
       </section>
-      <div className="preview-footnote">Data dashboard ditampilkan langsung dari Supabase. Batas waktu terlambat saat ini 08:00 WIB.</div>
+      <div className="preview-footnote">Data dashboard ditampilkan langsung dari Supabase. Status terlambat menggunakan jam masuk yang tersimpan pada tiap absensi.</div>
     </div>
   </main></div>
 }

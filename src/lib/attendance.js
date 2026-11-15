@@ -1,4 +1,5 @@
 import { getSupabaseClient } from './supabase'
+import { isLateCheckIn } from './workSchedule'
 
 export function getJakartaDate(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -88,7 +89,7 @@ export async function getAdminAttendanceOverview() {
     .order('full_name')
   const weeklyAttendanceRequest = client
     .from('attendance_records')
-    .select('id, user_id, work_date, check_in_at')
+    .select('id, user_id, work_date, check_in_at, scheduled_start_time')
     .gte('work_date', weekStart)
     .lte('work_date', today)
     .order('check_in_at', { ascending: false })
@@ -107,12 +108,7 @@ export async function getAdminAttendanceOverview() {
     .map((record) => ({
       ...record,
       employee: profilesById.get(record.user_id),
-      late: Number(new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Asia/Jakarta',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }).format(new Date(record.check_in_at)).replace(':', '')) > 800,
+      late: isLateCheckIn(record.check_in_at, record.scheduled_start_time),
     }))
   const weeklyCounts = new Map()
   attendance.forEach((record) => {
@@ -151,7 +147,7 @@ export async function getAdminAttendanceRecords(workDate) {
       .order('full_name'),
     client
       .from('attendance_records')
-      .select('id, user_id, work_date, check_in_at, latitude, longitude, accuracy_m, photo_path')
+      .select('id, user_id, work_date, check_in_at, scheduled_start_time, latitude, longitude, accuracy_m, photo_path')
       .eq('work_date', workDate)
       .order('check_in_at', { ascending: false }),
   ])
@@ -165,12 +161,7 @@ export async function getAdminAttendanceRecords(workDate) {
     .map((record) => ({
       ...record,
       employee: profilesById.get(record.user_id),
-      late: Number(new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Asia/Jakarta',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }).format(new Date(record.check_in_at)).replace(':', '')) > 800,
+      late: isLateCheckIn(record.check_in_at, record.scheduled_start_time),
     }))
 }
 

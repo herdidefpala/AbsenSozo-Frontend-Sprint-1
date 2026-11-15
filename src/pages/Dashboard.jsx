@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 import { useAuth } from '../context/AuthContext'
 import { getEmployeeProfile, getTodayAttendance, submitCheckIn } from '../lib/attendance'
+import { getWorkSchedule } from '../lib/workSchedule'
 
 export default function Dashboard() {
   const [checkedIn, setCheckedIn] = useState(false)
@@ -15,6 +16,7 @@ export default function Dashboard() {
   const [cameraStatus, setCameraStatus] = useState('Kamera belum aktif')
   const [error, setError] = useState('')
   const [profile, setProfile] = useState(null)
+  const [schedule, setSchedule] = useState(null)
   const [loadingAttendance, setLoadingAttendance] = useState(true)
   const [savingAttendance, setSavingAttendance] = useState(false)
   const videoRef = useRef(null)
@@ -26,10 +28,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     let active = true
-    Promise.all([getEmployeeProfile(user.id), getTodayAttendance(user.id)]).then(([employeeProfile, existingAttendance]) => {
+    Promise.all([getEmployeeProfile(user.id), getTodayAttendance(user.id), getWorkSchedule()]).then(([employeeProfile, existingAttendance, workSchedule]) => {
       if (!active) return
       setProfile(employeeProfile)
       setAttendance(existingAttendance)
+      setSchedule(workSchedule)
       setCheckedIn(Boolean(existingAttendance))
       if (existingAttendance) {
         setLocation({
@@ -241,7 +244,7 @@ export default function Dashboard() {
         <section className="panel profile-panel"><div className="panel-heading"><div><h3>Informasi profil</h3><p>Data akun karyawan</p></div></div>
           <div className="mini-profile"><div className="large-avatar">{(profile?.full_name || user.email || 'K').slice(0, 2).toUpperCase()}</div><div><b>{profile?.full_name || user.email}</b><span>{profile?.employee_code || 'Belum ada kode'} · {profile?.department || 'Belum ada departemen'}</span></div></div>
           <div className="profile-line"><span>Departemen</span><b>{profile?.department || 'Belum diatur'}</b></div>
-          <div className="profile-line"><span>Jadwal kerja</span><b>08:00 – 17:00</b></div>
+          <div className="profile-line"><span>Jadwal kerja</span><b>{schedule ? `${schedule.startTime} – ${schedule.endTime}` : '--:--'}</b></div>
           <div className="profile-line"><span>Status akun</span><b className="status-active">Aktif</b></div>
           <div className="profile-line"><span>Lokasi saat ini</span><b>{location ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : 'Belum tersimpan'}</b></div>
         </section>

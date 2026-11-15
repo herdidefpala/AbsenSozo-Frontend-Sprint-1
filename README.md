@@ -38,7 +38,7 @@
 
 ## Setup Supabase
 1. Pastikan `.env.local` berisi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY`. Formatnya tersedia di `.env.example`. Gunakan publishable key; jangan pernah menaruh service-role key di frontend.
-2. Jalankan seluruh SQL pada `supabase/schema.sql` melalui Supabase SQL Editor. Jika schema sebelumnya sudah dijalankan, jalankan ulang file ini agar trigger pendaftaran baru ikut dibuat. Script ini membuat tabel profil/absensi, private bucket foto, trigger waktu check-in WIB, Row Level Security, dan trigger pembuatan profil setelah signup.
+2. Jalankan seluruh SQL pada `supabase/schema.sql` melalui Supabase SQL Editor. Jika schema sebelumnya sudah dijalankan, jalankan ulang file ini agar izin edit profil, jadwal standar, dan validasi radius kantor ikut diterapkan. Script ini membuat tabel profil/absensi/jadwal/lokasi kantor, private bucket foto, trigger waktu check-in WIB, Row Level Security, dan trigger pembuatan profil setelah signup.
 3. Di Supabase Authentication, aktifkan konfirmasi email dan atur Site URL serta Redirect URLs untuk `http://localhost:5173` (tambahkan domain deploy saat production).
 4. Buat akun administrator melalui Supabase Dashboard → Authentication → Users, lalu tambahkan profil admin melalui SQL Editor menggunakan UID dari Auth Users:
    ```sql
@@ -47,16 +47,16 @@
      ('<ADMIN_AUTH_USER_UUID>', 'ADM-001', 'Nama Admin', 'Administrasi', 'admin');
    ```
 5. Karyawan dapat memilih **Daftar sebagai karyawan** pada halaman login. Akun baru perlu mengonfirmasi email; profil dibuat otomatis dengan role `employee`. Kode karyawan harus unik.
-6. Jalankan ulang `npm run dev`, lalu login menggunakan email/password. Pilihan role di layar login hanya mencocokkan akun, bukan memberi hak admin.
+6. Sebelum menguji check-in, login sebagai admin dan atur titik serta radius kantor pada menu **Lokasi Kantor**. Check-in ditolak sampai lokasi dikonfigurasi. Setelah itu jalankan ulang `npm run dev`, lalu login menggunakan email/password. Pilihan role di layar login hanya mencocokkan akun, bukan memberi hak admin.
 
 ## Integrasi dan batasan
 - Foto disimpan di bucket private `attendance-photos`, dengan path per user. Record absensi dan koordinat disimpan di `attendance_records`.
 - RLS membatasi data karyawan ke pemilik akun, sementara administrator dapat membaca ringkasan seluruh karyawan.
 - Check-in hanya dapat dibuat sekali per user per hari. Timestamp dan tanggal WIB ditetapkan oleh trigger database.
-- Koordinat GPS berasal dari browser dan saat ini hanya direkam; belum ada geofence, validasi jarak kantor, atau verifikasi anti-spoofing di server. Implementasikan aturan kantor di backend sebelum absensi dipakai operasional.
+- Koordinat GPS berasal dari browser dan jaraknya terhadap titik kantor divalidasi oleh trigger database. Validasi ini tidak mendeteksi pemalsuan GPS; koordinat dari browser tetap dapat dimanipulasi.
 - Kamera dan GPS memerlukan izin browser dan secure context (HTTPS, atau localhost).
-- Akun administrator dibuat di Supabase Dashboard; pemulihan password belum tersedia di aplikasi.
+- Akun administrator dibuat di Supabase Dashboard. Administrator dapat mengganti kata sandi dari menu **Pengaturan**; pemulihan kata sandi jika tidak bisa login belum tersedia di aplikasi.
 - Pendaftaran mandiri membuat profil berdasarkan nama, kode karyawan, dan departemen yang diisi pengguna. Konfirmasi email membuktikan akses ke email, bukan status kepegawaiannya; untuk penggunaan operasional pertimbangkan persetujuan admin atau validasi kode terhadap daftar karyawan resmi.
 
 ## Catatan
-Dashboard admin membaca tabel absensi langsung. Jadwal dan batas keterlambatan masih menggunakan aturan sederhana pukul 08:00 WIB. Uji kebijakan akses dan geofence di project Supabase sebelum penggunaan operasional.
+Dashboard admin membaca tabel absensi langsung. Jadwal standar satu perusahaan dimulai pukul 08:00 dan dapat diubah dari menu **Jadwal Kerja**; jam mulai jadwal disimpan pada setiap check-in sehingga perubahan jadwal tidak mengubah status historis. Jadwal per karyawan/departemen dan shift malam belum didukung. Geofence memakai satu titik kantor dan radius yang dapat diatur di menu **Lokasi Kantor**. Menu **Laporan** menyediakan filter rentang tanggal dan ekspor CSV. Uji kebijakan akses dan geofence di project Supabase sebelum penggunaan operasional.
