@@ -107,6 +107,7 @@ create table if not exists public.attendance_records (
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   work_date date not null,
   check_in_at timestamptz not null default now(),
+  check_out_at timestamptz,
   scheduled_start_time time not null default '08:00',
   latitude double precision not null check (latitude between -90 and 90),
   longitude double precision not null check (longitude between -180 and 180),
@@ -118,6 +119,9 @@ create table if not exists public.attendance_records (
 
 alter table public.attendance_records
 add column if not exists scheduled_start_time time not null default '08:00';
+
+alter table public.attendance_records
+add column if not exists check_out_at timestamptz;
 
 create or replace function public.set_attendance_check_in()
 returns trigger
@@ -165,6 +169,28 @@ drop trigger if exists set_attendance_check_in on public.attendance_records;
 create trigger set_attendance_check_in
 before insert on public.attendance_records
 for each row execute function public.set_attendance_check_in();
+
+create or replace function public.set_attendance_check_out()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if (select auth.uid()) is distinct from old.user_id then
+    raise exception 'Anda hanya dapat melakukan check-out pada absensi sendiri.';
+  end if;
+  if old.check_out_at is not null then
+    raise exception 'Check-out sudah tercatat.';
+  end if;
+  new.check_out_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_attendance_check_out on public.attendance_records;
+create trigger set_attendance_check_out
+before update of check_out_at on public.attendance_records
+for each row execute function public.set_attendance_check_out();
 
 alter table public.employee_profiles enable row level security;
 alter table public.attendance_records enable row level security;
@@ -223,11 +249,28 @@ with check (
   and split_part(photo_path, '/', 1) = (select auth.uid())::text
 );
 
+drop policy if exists "Employees can check out own attendance" on public.attendance_records;
+create policy "Employees can check out own attendance"
+on public.attendance_records for update to authenticated
+using (
+  user_id = (select auth.uid())
+  and (select public.is_employee())
+  and check_out_at is null
+)
+with check (
+  user_id = (select auth.uid())
+  and (select public.is_employee())
+  and check_out_at is not null
+);
+
 grant select on public.employee_profiles to authenticated;
 grant update on public.employee_profiles to authenticated;
 grant select, update on public.work_schedules to authenticated;
 grant select, update on public.office_locations to authenticated;
 grant insert, select on public.attendance_records to authenticated;
+revoke update on public.attendance_records from authenticated;
+revoke update (check_out_at) on public.attendance_records from authenticated;
+grant update (check_out_at) on public.attendance_records to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('attendance-photos', 'attendance-photos', false, 5242880, array['image/jpeg'])

@@ -99,18 +99,19 @@ export default function AdminAttendance() {
         <div className="attendance-list-summary">{loading ? 'Memuat data...' : `${filteredRecords.length} catatan · ${formatDate(workDate)}`}</div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>NAMA KARYAWAN</th><th>KODE</th><th>DEPARTEMEN</th><th>JAM MASUK</th><th>STATUS</th><th>DETAIL</th></tr></thead>
+            <thead><tr><th>NAMA KARYAWAN</th><th>KODE</th><th>DEPARTEMEN</th><th>JAM MASUK</th><th>JAM PULANG</th><th>STATUS</th><th>DETAIL</th></tr></thead>
             <tbody>
               {filteredRecords.map((record) => <tr key={record.id}>
                 <td><div className="table-person"><span>{record.employee.full_name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span><b>{record.employee.full_name}</b></div></td>
                 <td>{record.employee.employee_code}</td>
                 <td>{record.employee.department}</td>
                 <td>{formatTime(record.check_in_at)}</td>
+                <td>{record.check_out_at ? formatTime(record.check_out_at) : '—'}</td>
                 <td><span className={`table-status ${record.late ? 'late' : ''}`}>{record.late ? 'Terlambat' : 'Tepat waktu'}</span></td>
                 <td><button className="attendance-detail-button" type="button" onClick={() => setSelectedRecord(record)}>Lihat detail</button></td>
               </tr>)}
-              {!loading && !error && !filteredRecords.length && <tr><td className="attendance-empty-cell" colSpan="6">Tidak ada catatan absensi yang cocok.</td></tr>}
-              {loading && <tr><td className="attendance-empty-cell" colSpan="6">Memuat data absensi...</td></tr>}
+              {!loading && !error && !filteredRecords.length && <tr><td className="attendance-empty-cell" colSpan="7">Tidak ada catatan absensi yang cocok.</td></tr>}
+              {loading && <tr><td className="attendance-empty-cell" colSpan="7">Memuat data absensi...</td></tr>}
             </tbody>
           </table>
         </div>
@@ -125,6 +126,7 @@ export default function AdminAttendance() {
         <div className="attendance-detail-heading"><div><h2 id="attendance-detail-title">Detail absensi</h2><p>{selectedRecord.employee.full_name} · {formatDate(selectedRecord.work_date)}</p></div><button type="button" className="attendance-close-button" aria-label="Tutup detail" onClick={() => setSelectedRecord(null)}><X size={18}/></button></div>
         <div className="attendance-detail-meta">
           <div><span>Jam masuk</span><b>{formatTime(selectedRecord.check_in_at)} WIB</b></div>
+          <div><span>Jam pulang</span><b>{selectedRecord.check_out_at ? `${formatTime(selectedRecord.check_out_at)} WIB` : 'Belum check-out'}</b></div>
           <div><span>Status</span><b className={selectedRecord.late ? 'detail-late' : 'detail-ontime'}>{selectedRecord.late ? 'Terlambat' : 'Tepat waktu'}</b></div>
           <div><span>Batas jam masuk</span><b>{selectedRecord.scheduled_start_time.slice(0, 5)} WIB</b></div>
           <div><span>Departemen</span><b>{selectedRecord.employee.department}</b></div>

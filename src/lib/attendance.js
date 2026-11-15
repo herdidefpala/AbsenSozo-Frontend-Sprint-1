@@ -26,7 +26,7 @@ export async function getEmployeeProfile(userId) {
 export async function getTodayAttendance(userId) {
   const { data, error } = await getSupabaseClient()
     .from('attendance_records')
-    .select('id, user_id, work_date, check_in_at, latitude, longitude, accuracy_m, photo_path')
+    .select('id, user_id, work_date, check_in_at, check_out_at, latitude, longitude, accuracy_m, photo_path')
     .eq('user_id', userId)
     .eq('work_date', getJakartaDate())
     .maybeSingle()
@@ -38,7 +38,7 @@ export async function getTodayAttendance(userId) {
 export async function getEmployeeAttendanceHistory(userId, { startDate, endDate, page, pageSize }) {
   let request = getSupabaseClient()
     .from('attendance_records')
-    .select('id, work_date, check_in_at, scheduled_start_time', { count: 'exact' })
+    .select('id, work_date, check_in_at, check_out_at, scheduled_start_time', { count: 'exact' })
     .eq('user_id', userId)
 
   if (startDate) request = request.gte('work_date', startDate)
@@ -82,7 +82,7 @@ export async function submitCheckIn({ user, photoData, location }) {
       accuracy_m: location.accuracy,
       photo_path: photoPath,
     })
-    .select('id, user_id, work_date, check_in_at, latitude, longitude, accuracy_m, photo_path')
+    .select('id, user_id, work_date, check_in_at, check_out_at, latitude, longitude, accuracy_m, photo_path')
     .single()
 
   if (insertError) {
@@ -100,6 +100,23 @@ export async function submitCheckIn({ user, photoData, location }) {
   return data
 }
 
+export async function submitCheckOut(userId) {
+  const { data, error } = await getSupabaseClient()
+    .from('attendance_records')
+    .update({ check_out_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('work_date', getJakartaDate())
+    .is('check_out_at', null)
+    .select('id, user_id, work_date, check_in_at, check_out_at')
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) {
+    throw new Error('Check-out tidak dapat dilakukan. Pastikan Anda sudah check-in dan belum check-out.')
+  }
+  return data
+}
+
 export async function getAdminAttendanceOverview() {
   const client = getSupabaseClient()
   const today = getJakartaDate()
@@ -113,7 +130,7 @@ export async function getAdminAttendanceOverview() {
     .order('full_name')
   const weeklyAttendanceRequest = client
     .from('attendance_records')
-    .select('id, user_id, work_date, check_in_at, scheduled_start_time')
+    .select('id, user_id, work_date, check_in_at, check_out_at, scheduled_start_time')
     .gte('work_date', weekStart)
     .lte('work_date', today)
     .order('check_in_at', { ascending: false })
@@ -171,7 +188,7 @@ export async function getAdminAttendanceRecords(workDate) {
       .order('full_name'),
     client
       .from('attendance_records')
-      .select('id, user_id, work_date, check_in_at, scheduled_start_time, latitude, longitude, accuracy_m, photo_path')
+      .select('id, user_id, work_date, check_in_at, check_out_at, scheduled_start_time, latitude, longitude, accuracy_m, photo_path')
       .eq('work_date', workDate)
       .order('check_in_at', { ascending: false }),
   ])

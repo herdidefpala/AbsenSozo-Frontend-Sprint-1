@@ -64,10 +64,10 @@ export default function AdminDashboard() {
         </section>
       </div>
       <section className="panel recent-panel"><div className="panel-heading"><div><h3>Absensi terbaru</h3><p>Aktivitas check-in karyawan hari ini</p></div><Link className="text-action" to="/admin/attendance">Lihat semua <ArrowUpRight size={15}/></Link></div>
-        <div className="table-wrap"><table><thead><tr><th>NAMA KARYAWAN</th><th>DEPARTEMEN</th><th>JAM MASUK</th><th>STATUS</th></tr></thead><tbody>
-          {overview?.records.map((record) => <tr key={record.id}><td><div className="table-person"><span>{record.employee.full_name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span><b>{record.employee.full_name}</b></div></td><td>{record.employee.department}</td><td>{formatTime(record.check_in_at)}</td><td><span className={`table-status ${record.late ? 'late' : ''}`}>{record.late ? 'Terlambat' : 'Tepat waktu'}</span></td></tr>)}
-          {!loading && !overview?.records.length && <tr><td colSpan="4">Belum ada absensi hari ini.</td></tr>}
-          {loading && <tr><td colSpan="4">Memuat absensi...</td></tr>}
+        <div className="table-wrap"><table><thead><tr><th>NAMA KARYAWAN</th><th>DEPARTEMEN</th><th>JAM MASUK</th><th>JAM PULANG</th><th>STATUS</th></tr></thead><tbody>
+          {overview?.records.map((record) => <tr key={record.id}><td><div className="table-person"><span>{record.employee.full_name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span><b>{record.employee.full_name}</b></div></td><td>{record.employee.department}</td><td>{formatTime(record.check_in_at)}</td><td>{record.check_out_at ? formatTime(record.check_out_at) : '—'}</td><td><span className={`table-status ${record.late ? 'late' : ''}`}>{record.late ? 'Terlambat' : 'Tepat waktu'}</span></td></tr>)}
+          {!loading && !overview?.records.length && <tr><td colSpan="5">Belum ada absensi hari ini.</td></tr>}
+          {loading && <tr><td colSpan="5">Memuat absensi...</td></tr>}
         </tbody></table></div>
       </section>
       <div className="preview-footnote">Data dashboard ditampilkan langsung dari Supabase. Status terlambat menggunakan jam masuk yang tersimpan pada tiap absensi.</div>

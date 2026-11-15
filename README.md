@@ -40,7 +40,7 @@
 
 ## Setup Supabase
 1. Pastikan `.env.local` berisi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY`. Formatnya tersedia di `.env.example`. Gunakan publishable key; jangan pernah menaruh service-role key di frontend.
-2. Jalankan seluruh SQL pada `supabase/schema.sql` melalui Supabase SQL Editor. Jika schema sebelumnya sudah dijalankan, jalankan ulang file ini agar izin edit profil, jadwal standar, dan validasi radius kantor ikut diterapkan. Script ini membuat tabel profil/absensi/jadwal/lokasi kantor, private bucket foto, trigger waktu check-in WIB, Row Level Security, dan trigger pembuatan profil setelah signup.
+2. Jalankan seluruh SQL pada `supabase/schema.sql` melalui Supabase SQL Editor. Jika schema sebelumnya sudah dijalankan, jalankan ulang file ini agar izin edit profil, jadwal standar, validasi radius kantor, dan check-out ikut diterapkan. Script ini membuat tabel profil/absensi/jadwal/lokasi kantor, private bucket foto, trigger waktu check-in/check-out WIB, Row Level Security, dan trigger pembuatan profil setelah signup.
 3. Di Supabase Authentication, aktifkan konfirmasi email dan atur Site URL serta Redirect URLs untuk `http://localhost:5173` (tambahkan domain deploy saat production).
 4. Buat akun administrator melalui Supabase Dashboard → Authentication → Users, lalu tambahkan profil admin melalui SQL Editor menggunakan UID dari Auth Users:
    ```sql
@@ -56,6 +56,7 @@
 - RLS membatasi data karyawan ke pemilik akun, sementara administrator dapat membaca ringkasan seluruh karyawan.
 - Karyawan dapat melihat rekap absensinya sendiri; halaman rekap tidak menyediakan aksi edit atau hapus.
 - Check-in hanya dapat dibuat sekali per user per hari. Timestamp dan tanggal WIB ditetapkan oleh trigger database.
+- Karyawan dapat melakukan check-out satu kali setelah check-in. Waktu check-out ditetapkan oleh database dan tidak dapat diubah dari aplikasi.
 - Koordinat GPS berasal dari browser dan jaraknya terhadap titik kantor divalidasi oleh trigger database. Validasi ini tidak mendeteksi pemalsuan GPS; koordinat dari browser tetap dapat dimanipulasi.
 - Kamera dan GPS memerlukan izin browser dan secure context (HTTPS, atau localhost).
 - Akun administrator dibuat di Supabase Dashboard. Administrator dapat mengganti kata sandi dari menu **Pengaturan**; pemulihan kata sandi jika tidak bisa login belum tersedia di aplikasi.

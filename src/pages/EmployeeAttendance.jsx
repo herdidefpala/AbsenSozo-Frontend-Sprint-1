@@ -83,16 +83,17 @@ export default function EmployeeAttendance() {
         <div className="attendance-list-summary">{loading ? 'Memuat rekap...' : `${count} catatan absensi · Halaman ${page + 1} dari ${pageCount}`}</div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>TANGGAL</th><th>JAM CHECK-IN</th><th>BATAS JAM MASUK</th><th>STATUS</th></tr></thead>
+            <thead><tr><th>TANGGAL</th><th>JAM CHECK-IN</th><th>JAM CHECK-OUT</th><th>BATAS JAM MASUK</th><th>STATUS</th></tr></thead>
             <tbody>
               {records.map((record) => <tr key={record.id}>
                 <td>{formatDate(record.work_date)}</td>
                 <td>{formatTime(record.check_in_at)} WIB</td>
+                <td>{record.check_out_at ? `${formatTime(record.check_out_at)} WIB` : '—'}</td>
                 <td>{record.scheduled_start_time.slice(0, 5)} WIB</td>
                 <td><span className={`table-status ${record.late ? 'late' : ''}`}>{record.late ? 'Terlambat' : 'Tepat waktu'}</span></td>
               </tr>)}
-              {!loading && !error && !records.length && <tr><td className="attendance-empty-cell" colSpan="4">Belum ada catatan absensi pada rentang tanggal ini.</td></tr>}
-              {loading && <tr><td className="attendance-empty-cell" colSpan="4">Memuat riwayat absensi...</td></tr>}
+              {!loading && !error && !records.length && <tr><td className="attendance-empty-cell" colSpan="5">Belum ada catatan absensi pada rentang tanggal ini.</td></tr>}
+              {loading && <tr><td className="attendance-empty-cell" colSpan="5">Memuat riwayat absensi...</td></tr>}
             </tbody>
           </table>
         </div>

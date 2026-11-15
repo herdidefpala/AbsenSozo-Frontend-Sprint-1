@@ -4,7 +4,7 @@ import { Clock3, CalendarDays, MapPin, Camera, ArrowUpRight, CheckCircle2, Coffe
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 import { useAuth } from '../context/AuthContext'
-import { getEmployeeProfile, getTodayAttendance, submitCheckIn } from '../lib/attendance'
+import { getEmployeeProfile, getTodayAttendance, submitCheckIn, submitCheckOut } from '../lib/attendance'
 import { getWorkSchedule } from '../lib/workSchedule'
 
 function getTimeBasedGreeting() {
@@ -30,6 +30,8 @@ export default function Dashboard() {
   const [showGreeting, setShowGreeting] = useState(true)
   const [loadingAttendance, setLoadingAttendance] = useState(true)
   const [savingAttendance, setSavingAttendance] = useState(false)
+  const [savingCheckOut, setSavingCheckOut] = useState(false)
+  const [checkOutError, setCheckOutError] = useState('')
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const { user } = useAuth()
@@ -199,6 +201,23 @@ export default function Dashboard() {
     }
   }
 
+  const handleCheckOut = async () => {
+    if (!attendance || attendance.check_out_at || loadingAttendance || savingCheckOut) return
+
+    setCheckOutError('')
+    setSavingCheckOut(true)
+    try {
+      const savedCheckOut = await submitCheckOut(user.id)
+      setAttendance((current) => current ? { ...current, check_out_at: savedCheckOut.check_out_at } : current)
+    } catch (checkOutSaveError) {
+      setCheckOutError(checkOutSaveError.message || 'Gagal menyimpan check-out. Silakan coba lagi.')
+    } finally {
+      setSavingCheckOut(false)
+    }
+  }
+
+  const checkedOut = Boolean(attendance?.check_out_at)
+
   return <div className="app-shell"><Sidebar/><main className="main-area"><Topbar title="Dashboard" subtitle="Ringkasan aktivitas kehadiran Anda"/>
     <div className="page-content">
       <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1>{greeting}, {profile?.full_name || user.email} <span>✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
@@ -215,7 +234,7 @@ export default function Dashboard() {
       <div className="section-heading"><div><h3>Ringkasan hari ini</h3><p>Pantau status kehadiran Anda.</p></div><Link className="text-action" to="/employee/attendance">Lihat riwayat <ArrowUpRight size={15}/></Link></div>
       <div className="stats-grid">
         <div className="stat-card"><div className="stat-icon blue"><Clock3 size={19}/></div><span>Jam masuk</span><b>{attendance ? new Date(attendance.check_in_at).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'}) : '--:--'}</b><small>{checkedIn ? 'Tercatat hari ini' : loadingAttendance ? 'Memuat status absensi...' : 'Belum melakukan check-in'}</small></div>
-        <div className="stat-card"><div className="stat-icon green"><CheckCircle2 size={19}/></div><span>Jam pulang</span><b>--:--</b><small>Belum melakukan check-out</small></div>
+        <div className="stat-card checkout-stat"><div className="stat-icon green"><CheckCircle2 size={19}/></div><span>Jam pulang</span><b>{attendance?.check_out_at ? new Date(attendance.check_out_at).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'}) : '--:--'}</b><small>{checkedOut ? 'Check-out tercatat hari ini' : attendance ? 'Anda sudah check-in' : 'Belum melakukan check-in'}</small><button type="button" className="checkout-button" onClick={handleCheckOut} disabled={!attendance || checkedOut || loadingAttendance || savingCheckOut}>{checkedOut ? 'Sudah Check Out' : savingCheckOut ? 'Menyimpan...' : 'Mulai Check Out'}</button>{checkOutError && <small className="checkout-error" role="alert">{checkOutError}</small>}</div>
         <div className="stat-card"><div className="stat-icon amber"><Coffee size={19}/></div><span>Total jam kerja</span><b>0j 00m</b><small>Akumulasi hari ini</small></div>
       </div>
 

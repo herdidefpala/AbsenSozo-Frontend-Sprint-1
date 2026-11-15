@@ -86,13 +86,14 @@ export default function AdminReports() {
 
   const exportCsv = () => {
     const rows = [
-      ['Tanggal', 'Kode karyawan', 'Nama karyawan', 'Departemen', 'Jam masuk (WIB)', 'Status'],
+      ['Tanggal', 'Kode karyawan', 'Nama karyawan', 'Departemen', 'Jam masuk (WIB)', 'Jam pulang (WIB)', 'Status'],
       ...filteredRecords.map((record) => [
         record.work_date,
         record.employee.employee_code,
         record.employee.full_name,
         record.employee.department,
         formatTime(record.check_in_at),
+        record.check_out_at ? formatTime(record.check_out_at) : '',
         record.late ? 'Terlambat' : 'Tepat waktu',
       ]),
     ]
@@ -128,7 +129,7 @@ export default function AdminReports() {
         <div className="report-summary">{loading ? 'Memuat laporan...' : `${filteredRecords.length} catatan · ${lateCount} terlambat · ${formatDate(appliedRange.startDate)} – ${formatDate(appliedRange.endDate)}`}</div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>TANGGAL</th><th>NAMA KARYAWAN</th><th>KODE</th><th>DEPARTEMEN</th><th>JAM MASUK</th><th>STATUS</th></tr></thead>
+            <thead><tr><th>TANGGAL</th><th>NAMA KARYAWAN</th><th>KODE</th><th>DEPARTEMEN</th><th>JAM MASUK</th><th>JAM PULANG</th><th>STATUS</th></tr></thead>
             <tbody>
               {filteredRecords.map((record) => <tr key={record.id}>
                 <td>{formatDate(record.work_date)}</td>
@@ -136,10 +137,11 @@ export default function AdminReports() {
                 <td>{record.employee.employee_code}</td>
                 <td>{record.employee.department}</td>
                 <td>{formatTime(record.check_in_at)}</td>
+                <td>{record.check_out_at ? formatTime(record.check_out_at) : '—'}</td>
                 <td><span className={`table-status ${record.late ? 'late' : ''}`}>{record.late ? 'Terlambat' : 'Tepat waktu'}</span></td>
               </tr>)}
-              {!loading && !error && !filteredRecords.length && <tr><td className="attendance-empty-cell" colSpan="6">Tidak ada data pada rentang tanggal dan filter tersebut.</td></tr>}
-              {loading && <tr><td className="attendance-empty-cell" colSpan="6">Memuat laporan absensi...</td></tr>}
+              {!loading && !error && !filteredRecords.length && <tr><td className="attendance-empty-cell" colSpan="7">Tidak ada data pada rentang tanggal dan filter tersebut.</td></tr>}
+              {loading && <tr><td className="attendance-empty-cell" colSpan="7">Memuat laporan absensi...</td></tr>}
             </tbody>
           </table>
         </div>
