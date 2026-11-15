@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, CalendarCheck, Clock3, MapPin, FileBarChart, FileText, Settings, LogOut, Fingerprint } from 'lucide-react'
+import { LayoutDashboard, Users, CalendarCheck, Clock3, MapPin, FileBarChart, FileText, Settings, LogOut, Fingerprint, ClipboardCheck } from 'lucide-react'
 import Brand from './Brand'
 import { useAuth } from '../context/AuthContext'
 
@@ -15,6 +15,7 @@ const adminLinks = [
   { to: '/admin/attendance', label: 'Data Absensi', icon: CalendarCheck },
   { to: '/admin/schedule', label: 'Jadwal Kerja', icon: Clock3 },
   { to: '/admin/locations', label: 'Lokasi Kantor', icon: MapPin },
+  { to: '/admin/requests', label: 'Pengajuan', icon: ClipboardCheck },
   { to: '/admin/reports', label: 'Laporan', icon: FileBarChart },
   { to: '/admin/settings', label: 'Pengaturan', icon: Settings },
 ]

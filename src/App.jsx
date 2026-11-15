@@ -11,6 +11,7 @@ import AdminLocations from './pages/AdminLocations'
 import AdminReports from './pages/AdminReports'
 import AdminSchedule from './pages/AdminSchedule'
 import AdminSettings from './pages/AdminSettings'
+import AdminRequests from './pages/AdminRequests'
 import { useAuth } from './context/AuthContext'
 import { getEmployeeProfile } from './lib/attendance'
 
@@ -71,6 +72,7 @@ export default function App() {
     <Route path="/admin/employees" element={<AuthRoute role="admin"><AdminEmployees /></AuthRoute>} />
     <Route path="/admin/schedule" element={<AuthRoute role="admin"><AdminSchedule /></AuthRoute>} />
     <Route path="/admin/locations" element={<AuthRoute role="admin"><AdminLocations /></AuthRoute>} />
+    <Route path="/admin/requests" element={<AuthRoute role="admin"><AdminRequests /></AuthRoute>} />
     <Route path="/admin/reports" element={<AuthRoute role="admin"><AdminReports /></AuthRoute>} />
     <Route path="/admin/settings" element={<AuthRoute role="admin"><AdminSettings /></AuthRoute>} />
     <Route path="*" element={<Navigate to="/" replace />} />

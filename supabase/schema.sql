@@ -117,6 +117,27 @@ create table if not exists public.attendance_records (
   unique (user_id, work_date)
 );
 
+create table if not exists public.employee_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  request_type text not null check (request_type in ('izin', 'sakit', 'cuti', 'lainnya')),
+  start_date date not null,
+  end_date date not null,
+  reason text not null check (char_length(btrim(reason)) between 1 and 1000),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  admin_note text check (admin_note is null or char_length(btrim(admin_note)) <= 1000),
+  reviewed_by uuid references auth.users (id),
+  reviewed_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (end_date >= start_date)
+);
+
+create index if not exists employee_requests_user_created_idx
+on public.employee_requests (user_id, created_at desc);
+
+create index if not exists employee_requests_status_created_idx
+on public.employee_requests (status, created_at desc);
+
 alter table public.attendance_records
 add column if not exists scheduled_start_time time not null default '08:00';
 
@@ -187,13 +208,38 @@ begin
 end;
 $$;
 
+create or replace function public.set_employee_request_review()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.status <> 'pending' then
+    raise exception 'Pengajuan ini sudah diproses.';
+  end if;
+  if new.status not in ('approved', 'rejected') then
+    raise exception 'Status pengajuan tidak valid.';
+  end if;
+
+  new.reviewed_by := (select auth.uid());
+  new.reviewed_at := now();
+  return new;
+end;
+$$;
+
 drop trigger if exists set_attendance_check_out on public.attendance_records;
 create trigger set_attendance_check_out
 before update of check_out_at on public.attendance_records
 for each row execute function public.set_attendance_check_out();
 
+drop trigger if exists set_employee_request_review on public.employee_requests;
+create trigger set_employee_request_review
+before update of status on public.employee_requests
+for each row execute function public.set_employee_request_review();
+
 alter table public.employee_profiles enable row level security;
 alter table public.attendance_records enable row level security;
+alter table public.employee_requests enable row level security;
 alter table public.work_schedules enable row level security;
 alter table public.office_locations enable row level security;
 
@@ -263,11 +309,37 @@ with check (
   and check_out_at is not null
 );
 
+drop policy if exists "Users can read own or admins read all employee requests" on public.employee_requests;
+create policy "Users can read own or admins read all employee requests"
+on public.employee_requests for select to authenticated
+using (user_id = (select auth.uid()) or (select public.is_admin()));
+
+drop policy if exists "Employees can submit own requests" on public.employee_requests;
+create policy "Employees can submit own requests"
+on public.employee_requests for insert to authenticated
+with check (
+  user_id = (select auth.uid())
+  and (select public.is_employee())
+  and status = 'pending'
+  and reviewed_by is null
+  and reviewed_at is null
+);
+
+drop policy if exists "Admins can review pending employee requests" on public.employee_requests;
+create policy "Admins can review pending employee requests"
+on public.employee_requests for update to authenticated
+using ((select public.is_admin()) and status = 'pending')
+with check ((select public.is_admin()) and status in ('approved', 'rejected'));
+
 grant select on public.employee_profiles to authenticated;
 grant update on public.employee_profiles to authenticated;
 grant select, update on public.work_schedules to authenticated;
 grant select, update on public.office_locations to authenticated;
 grant insert, select on public.attendance_records to authenticated;
+revoke all on public.employee_requests from public, anon, authenticated;
+grant select on public.employee_requests to authenticated;
+grant insert (user_id, request_type, start_date, end_date, reason) on public.employee_requests to authenticated;
+grant update (status, admin_note) on public.employee_requests to authenticated;
 revoke update on public.attendance_records from authenticated;
 revoke update (check_out_at) on public.attendance_records from authenticated;
 grant update (check_out_at) on public.attendance_records to authenticated;
