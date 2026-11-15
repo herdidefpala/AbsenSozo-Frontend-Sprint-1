@@ -40,7 +40,7 @@
 
 ## Setup Supabase
 1. Pastikan `.env.local` berisi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY`. Formatnya tersedia di `.env.example`. Gunakan publishable key; jangan pernah menaruh service-role key di frontend.
-2. Jalankan seluruh SQL pada `supabase/schema.sql` melalui Supabase SQL Editor. Jika schema sebelumnya sudah dijalankan, jalankan ulang file ini agar izin edit profil, jadwal standar, validasi radius kantor, check-out, serta tabel dan kebijakan pengajuan ikut diterapkan. Script ini membuat tabel profil/absensi/jadwal/lokasi/pengajuan, private bucket foto, trigger, dan Row Level Security.
+2. Jalankan seluruh SQL pada `supabase/schema.sql` melalui Supabase SQL Editor. Jika schema sebelumnya sudah dijalankan, jalankan ulang file ini agar kolom departemen profil, izin edit profil, jadwal standar, validasi radius kantor, check-out, serta tabel dan kebijakan pengajuan ikut diterapkan. Script ini membuat tabel profil/absensi/jadwal/lokasi/pengajuan, private bucket foto, trigger, dan Row Level Security.
 3. Di Supabase Authentication, aktifkan konfirmasi email dan atur Site URL serta Redirect URLs untuk `http://localhost:5173` (tambahkan domain deploy saat production).
 4. Buat akun administrator melalui Supabase Dashboard → Authentication → Users, lalu tambahkan profil admin melalui SQL Editor menggunakan UID dari Auth Users:
    ```sql

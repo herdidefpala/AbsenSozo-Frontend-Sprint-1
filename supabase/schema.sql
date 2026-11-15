@@ -9,6 +9,9 @@ create table if not exists public.employee_profiles (
   created_at timestamptz not null default now()
 );
 
+alter table public.employee_profiles
+add column if not exists department text not null default 'Operasional';
+
 create or replace function public.handle_new_employee_signup()
 returns trigger
 language plpgsql

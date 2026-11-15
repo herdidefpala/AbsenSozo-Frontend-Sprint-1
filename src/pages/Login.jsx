@@ -153,10 +153,10 @@ export default function Login() {
           </>}
           {(error || authError) && <div className="form-message error" role="alert">{error || authError}</div>}
           {success && <div className="form-message success" role="status">{success}</div>}
-          <button className="primary-button login-submit" type="submit" disabled={submitting}>{submitting ? 'Memproses...' : mode === 'login' ? 'Masuk ke Dashboard' : 'Daftar sebagai Karyawan'} <ArrowRight size={17}/></button>
+          <button className="primary-button login-submit" type="submit" disabled={submitting}>{submitting ? 'Memproses...' : mode === 'login' ? 'Login' : 'Daftar sebagai Karyawan'} <ArrowRight size={17}/></button>
         </form>
         <button type="button" className="auth-mode-toggle" onClick={() => {setMode(mode === 'login' ? 'signup' : 'login');setError('');setSuccess('')}}>{mode === 'login' ? 'Belum punya akun? Daftar sebagai karyawan' : 'Sudah punya akun? Masuk'}</button>
-        <div className="demo-note"><ShieldCheck size={16}/><span><b>Terhubung dengan Supabase</b><br/>Akun baru mendapat role karyawan. Email perlu dikonfirmasi sebelum login.</span></div>
+        <div className="demo-note"><svg className="supabase-logo" viewBox="0 0 109 113" aria-hidden="true" focusable="false"><path d="M63.7 110.3c-2.8 3.5-8.5 1.6-8.5-2.9V69.6h48.4c8.8 0 13.7 10.1 8.3 17.1L63.7 110.3Z" fill="#3ECF8E"/><path d="M45.3 2.7c2.8-3.5 8.5-1.6 8.5 2.9v37.8H5.4c-8.8 0-13.7-10.1-8.3-17.1L45.3 2.7Z" fill="#3ECF8E"/></svg><span><b>Terhubung dengan Supabase</b><br/>Akun baru mendapat role karyawan. Email perlu dikonfirmasi sebelum login.</span></div>
       </div>
       <div className="form-bottom">Dengan masuk, Anda menyetujui kebijakan penggunaan AbsenSozo.</div>
     </section>
