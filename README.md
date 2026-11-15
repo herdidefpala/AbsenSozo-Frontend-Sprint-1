@@ -24,6 +24,7 @@
 ## Preview route
 - `/` — Login
 - `/employee` — Dashboard karyawan
+- `/employee/attendance` — Rekap absensi karyawan (hanya baca)
 - `/admin` — Dashboard admin
 
 ## Deploy ke Vercel
@@ -52,6 +53,7 @@
 ## Integrasi dan batasan
 - Foto disimpan di bucket private `attendance-photos`, dengan path per user. Record absensi dan koordinat disimpan di `attendance_records`.
 - RLS membatasi data karyawan ke pemilik akun, sementara administrator dapat membaca ringkasan seluruh karyawan.
+- Karyawan dapat melihat rekap absensinya sendiri; halaman rekap tidak menyediakan aksi edit atau hapus.
 - Check-in hanya dapat dibuat sekali per user per hari. Timestamp dan tanggal WIB ditetapkan oleh trigger database.
 - Koordinat GPS berasal dari browser dan jaraknya terhadap titik kantor divalidasi oleh trigger database. Validasi ini tidak mendeteksi pemalsuan GPS; koordinat dari browser tetap dapat dimanipulasi.
 - Kamera dan GPS memerlukan izin browser dan secure context (HTTPS, atau localhost).

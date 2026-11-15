@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import EmployeeAttendance from './pages/EmployeeAttendance'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminAttendance from './pages/AdminAttendance'
 import AdminEmployees from './pages/AdminEmployees'
@@ -62,6 +63,7 @@ export default function App() {
   return <Routes>
     <Route path="/" element={<Login />} />
     <Route path="/employee" element={<AuthRoute role="employee"><Dashboard /></AuthRoute>} />
+    <Route path="/employee/attendance" element={<AuthRoute role="employee"><EmployeeAttendance /></AuthRoute>} />
     <Route path="/admin" element={<AuthRoute role="admin"><AdminDashboard /></AuthRoute>} />
     <Route path="/admin/attendance" element={<AuthRoute role="admin"><AdminAttendance /></AuthRoute>} />
     <Route path="/admin/employees" element={<AuthRoute role="admin"><AdminEmployees /></AuthRoute>} />

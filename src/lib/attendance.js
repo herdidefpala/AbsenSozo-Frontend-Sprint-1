@@ -35,6 +35,30 @@ export async function getTodayAttendance(userId) {
   return data
 }
 
+export async function getEmployeeAttendanceHistory(userId, { startDate, endDate, page, pageSize }) {
+  let request = getSupabaseClient()
+    .from('attendance_records')
+    .select('id, work_date, check_in_at, scheduled_start_time', { count: 'exact' })
+    .eq('user_id', userId)
+
+  if (startDate) request = request.gte('work_date', startDate)
+  if (endDate) request = request.lte('work_date', endDate)
+
+  const { data, count, error } = await request
+    .order('work_date', { ascending: false })
+    .order('check_in_at', { ascending: false })
+    .range(page * pageSize, (page + 1) * pageSize - 1)
+
+  if (error) throw error
+  return {
+    records: data.map((record) => ({
+      ...record,
+      late: isLateCheckIn(record.check_in_at, record.scheduled_start_time),
+    })),
+    count: count || 0,
+  }
+}
+
 export async function submitCheckIn({ user, photoData, location }) {
   const client = getSupabaseClient()
   const date = getJakartaDate()

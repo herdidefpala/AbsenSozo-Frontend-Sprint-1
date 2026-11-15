@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 
 const employeeLinks = [
   { to: '/employee', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/employee/attendance', label: 'Rekap Absensi', icon: CalendarCheck },
 ]
 const adminLinks = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard },
@@ -30,7 +31,7 @@ export default function Sidebar({ admin = false }) {
     }
   }
 
-  return <aside className="sidebar">
+  return <aside className={`sidebar ${admin ? 'admin-sidebar' : 'employee-sidebar'}`}>
     <div className="sidebar-brand"><Brand light /></div>
     <div className="nav-caption">{admin ? 'WORKSPACE' : 'MENU UTAMA'}</div>
     <nav className="nav-list">
@@ -44,7 +45,7 @@ export default function Sidebar({ admin = false }) {
     <div className="sidebar-bottom">
       <div className="sidebar-help"><div className="help-icon"><Fingerprint size={18}/></div><b>Butuh bantuan?</b><span>Hubungi administrator untuk bantuan akun.</span></div>
       {error && <div className="sidebar-error" role="alert">{error}</div>}
-      <button className="nav-item logout" onClick={handleSignOut}><LogOut size={18}/> Keluar</button>
+      <button type="button" className="nav-item logout" onClick={handleSignOut}><LogOut size={18}/> Keluar</button>
     </div>
   </aside>
 }
