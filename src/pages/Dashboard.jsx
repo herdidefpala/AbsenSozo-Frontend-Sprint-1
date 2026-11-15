@@ -35,11 +35,16 @@ export default function Dashboard({ employeeProfile: profile }) {
   const [todayRequestError, setTodayRequestError] = useState('')
   const [savingAttendance, setSavingAttendance] = useState(false)
   const [savingCheckOut, setSavingCheckOut] = useState(false)
+  const [now, setNow] = useState(() => new Date())
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const { user } = useAuth()
 
-  const now = new Date()
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
   const date = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const fullGreeting = `${greeting}, ${profile?.full_name || 'Karyawan'}`
 
@@ -287,7 +292,7 @@ export default function Dashboard({ employeeProfile: profile }) {
     <div className="page-content">
       <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1 aria-label={fullGreeting}><span className={`greeting-typing ${typedGreeting.length < fullGreeting.length ? 'typing' : ''}`} aria-hidden="true">{typedGreeting}</span> <span aria-hidden="true">✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
       <section className="attendance-hero">
-        <div className="hero-content"><span className="hero-label"><i/> ABSENSI HARI INI</span><h2>{checkoutMode ? 'Selesaikan check-out Anda.' : checkedIn ? 'Kehadiran berhasil dicatat.' : 'Siap memulai hari?'}</h2><p>{checkoutMode ? 'Ambil foto dan cek lokasi terbaru sebelum konfirmasi check-out.' : checkedIn ? 'Waktu check-in Anda sudah tercatat pada perangkat ini.' : 'Pastikan kamera dan lokasi aktif sebelum melakukan check-in.'}</p>
+        <div className="hero-content"><span className="hero-label"><i/> ABSENSI HARI INI</span><h2 className={!checkoutMode && !checkedIn ? 'ready-heading' : ''}>{checkoutMode ? 'Selesaikan check-out Anda.' : checkedIn ? 'Kehadiran berhasil dicatat.' : 'Siap memulai hari?'}</h2><p>{checkoutMode ? 'Ambil foto dan cek lokasi terbaru sebelum konfirmasi check-out.' : checkedIn ? 'Waktu check-in Anda sudah tercatat pada perangkat ini.' : 'Pastikan kamera dan lokasi aktif sebelum melakukan check-in.'}</p>
           <div className="hero-actions">
             <div className="hero-action-buttons">
               <button type="button" className="white-button" onClick={startCamera} disabled={checkedIn || loadingAttendance}><Camera size={17}/> {checkedIn ? 'Sudah Check In' : cameraEnabled ? 'Kamera aktif' : 'Mulai Check In'}</button>
@@ -296,7 +301,7 @@ export default function Dashboard({ employeeProfile: profile }) {
             <span><MapPin size={15}/> {location ? 'Lokasi terdeteksi' : 'Lokasi akan diverifikasi'}</span>
           </div>
         </div>
-        <div className="hero-time"><span>WAKTU SEKARANG</span><strong>{now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</strong><small>WIB · Waktu perangkat</small></div>
+        <div className="hero-time"><span>WAKTU SEKARANG</span><strong>{now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</strong><small>WIB · Waktu perangkat</small></div>
       </section>
 
       <div className="section-heading"><div><h3>Ringkasan hari ini</h3><p>Pantau status kehadiran Anda.</p></div><Link className="text-action" to="/employee/attendance">Lihat riwayat <ArrowUpRight size={15}/></Link></div>
