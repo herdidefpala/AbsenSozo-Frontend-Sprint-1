@@ -45,9 +45,11 @@ export default function Sidebar({ admin = false }) {
       })}
     </nav>
     <div className="sidebar-bottom">
-      <div className="sidebar-help"><div className="help-icon"><Fingerprint size={18}/></div><b>Butuh bantuan?</b><span>Hubungi administrator untuk bantuan akun.</span></div>
+      <a className="sidebar-help sidebar-help-button" href="https://wa.me/6285697315516?text=Halo%20Admin%20AbsenSozo%2C%20saya%20membutuhkan%20bantuan%20terkait%20aplikasi%20absensi." target="_blank" rel="noopener noreferrer" aria-label="Hubungi administrator melalui WhatsApp">
+        <div className="help-icon"><Fingerprint size={18}/></div><b>Butuh bantuan?</b><span>Hubungi administrator untuk bantuan akun.</span><span className="help-mobile-label">Bantuan</span>
+      </a>
       {error && <div className="sidebar-error" role="alert">{error}</div>}
-      <button type="button" className="nav-item logout" onClick={handleSignOut}><LogOut size={18}/> Keluar</button>
+      <button type="button" className="nav-item logout" onClick={handleSignOut}><LogOut size={18}/> <span>Keluar</span></button>
     </div>
   </aside>
 }
