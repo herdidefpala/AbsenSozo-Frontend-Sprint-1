@@ -75,3 +75,15 @@
   .employee-sidebar+.main-area .topbar-heading{margin-left:40px}
 }
 @media(prefers-reduced-motion:reduce){.employee-sidebar{transition:none}}
+.visual-copy h1{animation:login-headline-float 3.4s ease-in-out infinite}
+.visual-copy h1 em{background:linear-gradient(90deg,#83aaff 0%,#fff 50%,#83aaff 100%);background-size:200% 100%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:login-headline-shimmer 3.2s linear infinite}
+.visual-copy h1.typing:after{content:"";display:inline-block;height:.88em;margin-left:3px;border-right:2px solid #fff;vertical-align:-.08em;animation:typing-caret .7s steps(1) infinite}
+.feature-row{animation:login-feature-float 3.2s ease-in-out infinite}
+.feature-row:nth-child(2){animation-delay:.25s}
+.feature-row:nth-child(3){animation-delay:.5s}
+.feature-row>span{animation:login-feature-icon 2.4s ease-in-out infinite}
+@keyframes login-headline-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes login-headline-shimmer{to{background-position:200% 0}}
+@keyframes login-feature-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes login-feature-icon{0%,100%{transform:scale(1);box-shadow:0 0 0 0 #83aaff00}50%{transform:scale(1.05);box-shadow:0 0 16px 2px #83aaff35}}
+@media(prefers-reduced-motion:reduce){.visual-copy h1,.visual-copy h1 em,.visual-copy h1.typing:after,.feature-row,.feature-row>span{animation:none}}

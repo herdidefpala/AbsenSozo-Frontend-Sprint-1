@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Eye, EyeOff, ShieldCheck, Fingerprint, Clock3, MapPin } from 'lucide-react'
 import Brand from '../components/Brand'
 import { getEmployeeProfile } from '../lib/attendance'
 import { getSupabaseClient, supabaseConfigured } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+
+const loginHeadline = 'Waktu kerja\ntercatat lebih baik.'
 
 export default function Login() {
   const [mode, setMode] = useState('login')
@@ -19,8 +21,25 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [typedHeadline, setTypedHeadline] = useState('')
   const navigate = useNavigate()
   const { error: authError } = useAuth()
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setTypedHeadline(loginHeadline)
+      return
+    }
+
+    let characterIndex = 0
+    const timer = window.setInterval(() => {
+      characterIndex += 1
+      setTypedHeadline(loginHeadline.slice(0, characterIndex))
+      if (characterIndex >= loginHeadline.length) window.clearInterval(timer)
+    }, 55)
+
+    return () => window.clearInterval(timer)
+  }, [])
 
   const submit = async (event) => {
     event.preventDefault()
@@ -91,7 +110,10 @@ export default function Login() {
       <div className="visual-top"><Brand light/><span className="secure-label"><ShieldCheck size={14}/> SISTEM ABSENSI DIGITAL</span></div>
       <div className="visual-copy">
         <div className="eyebrow"><span/> WORK SMARTER, BE PRESENT</div>
-        <h1>Waktu kerja<br/>tercatat <em>lebih baik.</em></h1>
+        <h1 className={typedHeadline.length < loginHeadline.length ? 'typing' : ''} aria-label="Waktu kerja tercatat lebih baik.">
+          <span aria-hidden="true">{typedHeadline.split('\n')[0]}</span><br/>
+          <span aria-hidden="true">{typedHeadline.split('\n')[1]?.slice(0, 9)}</span><em aria-hidden="true">{typedHeadline.split('\n')[1]?.slice(9)}</em>
+        </h1>
         <p>Kelola kehadiran tim dengan proses yang sederhana, akurat, dan transparan.</p>
         <div className="feature-stack">
           <div className="feature-row"><span><Fingerprint size={19}/></span><div><b>Verifikasi foto</b><small>Bukti kehadiran melalui kamera</small></div></div>
