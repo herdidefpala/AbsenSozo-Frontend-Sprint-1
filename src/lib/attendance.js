@@ -140,3 +140,46 @@ export async function getAdminAttendanceOverview() {
     chartData,
   }
 }
+
+export async function getAdminAttendanceRecords(workDate) {
+  const client = getSupabaseClient()
+  const [{ data: profiles, error: profilesError }, { data: attendance, error: attendanceError }] = await Promise.all([
+    client
+      .from('employee_profiles')
+      .select('user_id, employee_code, full_name, department')
+      .eq('role', 'employee')
+      .order('full_name'),
+    client
+      .from('attendance_records')
+      .select('id, user_id, work_date, check_in_at, latitude, longitude, accuracy_m, photo_path')
+      .eq('work_date', workDate)
+      .order('check_in_at', { ascending: false }),
+  ])
+
+  if (profilesError) throw profilesError
+  if (attendanceError) throw attendanceError
+
+  const profilesById = new Map(profiles.map((profile) => [profile.user_id, profile]))
+  return attendance
+    .filter((record) => profilesById.has(record.user_id))
+    .map((record) => ({
+      ...record,
+      employee: profilesById.get(record.user_id),
+      late: Number(new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Jakarta',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(new Date(record.check_in_at)).replace(':', '')) > 800,
+    }))
+}
+
+export async function getAttendancePhotoUrl(photoPath) {
+  const { data, error } = await getSupabaseClient()
+    .storage
+    .from('attendance-photos')
+    .createSignedUrl(photoPath, 600)
+
+  if (error) throw error
+  return data.signedUrl
+}

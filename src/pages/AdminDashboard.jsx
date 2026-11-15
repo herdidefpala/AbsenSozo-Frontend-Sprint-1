@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Users, UserCheck, Clock3, UserX, ArrowUpRight, MoreHorizontal } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Users, UserCheck, Clock3, UserX, ArrowUpRight } from 'lucide-react'
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
@@ -55,14 +56,14 @@ export default function AdminDashboard() {
       {error && <div className="form-message error" role="alert">{error}</div>}
       <div className="stats-grid admin-stats">{stats.map((stat) => {const Icon=stat.icon;return <div className="stat-card admin-stat" key={stat.label}><div className={`stat-icon ${stat.tone}`}><Icon size={19}/></div><span>{stat.label}</span><b>{stat.value}</b><small>{stat.note}</small></div>})}</div>
       <div className="admin-content-grid">
-        <section className="panel chart-panel"><div className="panel-heading"><div><h3>Tren kehadiran</h3><p>Persentase kehadiran selama 7 hari terakhir</p></div><button className="more-button">Minggu ini <MoreHorizontal size={17}/></button></div>
+        <section className="panel chart-panel"><div className="panel-heading"><div><h3>Tren kehadiran</h3><p>Persentase kehadiran selama 7 hari terakhir</p></div><span className="more-button">Minggu ini</span></div>
           <div className="chart-area"><ResponsiveContainer width="100%" height="100%"><BarChart data={overview?.chartData || []}><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill:'#8792A5',fontSize:12}}/><Tooltip cursor={{fill:'#F3F6FC'}} formatter={(value) => [`${value}%`, 'Hadir']}/><Bar dataKey="hadir" fill="#3478F6" radius={[5,5,0,0]} maxBarSize={32}/></BarChart></ResponsiveContainer></div>
         </section>
         <section className="panel"><div className="panel-heading"><div><h3>Ringkasan status</h3><p>Komposisi kehadiran hari ini</p></div></div>
           <div className="status-summary"><div className="summary-number">{loading ? '—' : `${attendanceRate}%`}<span>Tingkat kehadiran</span></div><div className="progress-track"><div style={{width:`${attendanceRate}%`}}/></div><div className="legend-row"><i className="dot green-dot"/>Hadir <b>{overview?.present ?? '—'}</b></div><div className="legend-row"><i className="dot amber-dot"/>Terlambat <b>{overview?.late ?? '—'}</b></div><div className="legend-row"><i className="dot red-dot"/>Belum hadir <b>{overview?.absent ?? '—'}</b></div></div>
         </section>
       </div>
-      <section className="panel recent-panel"><div className="panel-heading"><div><h3>Absensi terbaru</h3><p>Aktivitas check-in karyawan hari ini</p></div><button className="text-action">Lihat semua <ArrowUpRight size={15}/></button></div>
+      <section className="panel recent-panel"><div className="panel-heading"><div><h3>Absensi terbaru</h3><p>Aktivitas check-in karyawan hari ini</p></div><Link className="text-action" to="/admin/attendance">Lihat semua <ArrowUpRight size={15}/></Link></div>
         <div className="table-wrap"><table><thead><tr><th>NAMA KARYAWAN</th><th>DEPARTEMEN</th><th>JAM MASUK</th><th>STATUS</th></tr></thead><tbody>
           {overview?.records.map((record) => <tr key={record.id}><td><div className="table-person"><span>{record.employee.full_name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span><b>{record.employee.full_name}</b></div></td><td>{record.employee.department}</td><td>{formatTime(record.check_in_at)}</td><td><span className={`table-status ${record.late ? 'late' : ''}`}>{record.late ? 'Terlambat' : 'Tepat waktu'}</span></td></tr>)}
           {!loading && !overview?.records.length && <tr><td colSpan="4">Belum ada absensi hari ini.</td></tr>}
