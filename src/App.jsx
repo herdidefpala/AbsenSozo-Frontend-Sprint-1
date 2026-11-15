@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { cloneElement, useEffect, useState } from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -57,7 +57,7 @@ function AuthRoute({ role, children }) {
     return <Navigate to={profile.role === 'admin' ? '/admin' : '/employee'} replace />
   }
 
-  return children
+  return role === 'employee' ? cloneElement(children, { employeeProfile: profile }) : children
 }
 
 export default function App() {

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Clock3, CalendarDays, MapPin, Camera, ArrowUpRight, CheckCircle2, Coffee, ChevronRight, LocateFixed, AlertCircle, Check, VideoOff, Sparkles, X } from 'lucide-react'
+import { Clock3, CalendarDays, MapPin, Camera, ArrowUpRight, CheckCircle2, Coffee, ChevronRight, LocateFixed, AlertCircle, Check, VideoOff } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 import { useAuth } from '../context/AuthContext'
-import { getEmployeeProfile, getTodayAttendance, submitCheckIn, submitCheckOut } from '../lib/attendance'
+import { getTodayAttendance, submitCheckIn, submitCheckOut } from '../lib/attendance'
 import { getWorkSchedule } from '../lib/workSchedule'
 
 function getTimeBasedGreeting() {
@@ -15,7 +15,7 @@ function getTimeBasedGreeting() {
   return 'Selamat malam'
 }
 
-export default function Dashboard() {
+export default function Dashboard({ employeeProfile: profile }) {
   const [checkedIn, setCheckedIn] = useState(false)
   const [attendance, setAttendance] = useState(null)
   const [photoData, setPhotoData] = useState('')
@@ -24,10 +24,8 @@ export default function Dashboard() {
   const [locationStatus, setLocationStatus] = useState('Lokasi belum aktif')
   const [cameraStatus, setCameraStatus] = useState('Kamera belum aktif')
   const [error, setError] = useState('')
-  const [profile, setProfile] = useState(null)
   const [schedule, setSchedule] = useState(null)
   const [greeting] = useState(getTimeBasedGreeting)
-  const [showGreeting, setShowGreeting] = useState(true)
   const [loadingAttendance, setLoadingAttendance] = useState(true)
   const [savingAttendance, setSavingAttendance] = useState(false)
   const [savingCheckOut, setSavingCheckOut] = useState(false)
@@ -40,15 +38,9 @@ export default function Dashboard() {
   const date = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setShowGreeting(false), 5000)
-    return () => window.clearTimeout(timeout)
-  }, [])
-
-  useEffect(() => {
     let active = true
-    Promise.all([getEmployeeProfile(user.id), getTodayAttendance(user.id), getWorkSchedule()]).then(([employeeProfile, existingAttendance, workSchedule]) => {
+    Promise.all([getTodayAttendance(user.id), getWorkSchedule()]).then(([existingAttendance, workSchedule]) => {
       if (!active) return
-      setProfile(employeeProfile)
       setAttendance(existingAttendance)
       setSchedule(workSchedule)
       setCheckedIn(Boolean(existingAttendance))
@@ -220,7 +212,7 @@ export default function Dashboard() {
 
   return <div className="app-shell"><Sidebar/><main className="main-area"><Topbar title="Dashboard" subtitle="Ringkasan aktivitas kehadiran Anda"/>
     <div className="page-content">
-      <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1>{greeting}, {profile?.full_name || user.email} <span>✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
+      <div className="welcome-row"><div><div className="page-eyebrow">AREA KARYAWAN</div><h1>{greeting}, {profile?.full_name || 'Karyawan'} <span>✦</span></h1><p>Semoga harimu produktif. Jangan lupa catat kehadiranmu hari ini.</p></div><div className="date-pill"><CalendarDays size={16}/>{date}</div></div>
       <section className="attendance-hero">
         <div className="hero-content"><span className="hero-label"><i/> ABSENSI HARI INI</span><h2>{checkedIn ? 'Kehadiran berhasil dicatat.' : 'Siap memulai hari?'}</h2><p>{checkedIn ? 'Waktu check-in Anda sudah tercatat pada perangkat ini.' : 'Pastikan kamera dan lokasi aktif sebelum melakukan check-in.'}</p>
           <div className="hero-actions">
@@ -277,7 +269,7 @@ export default function Dashboard() {
         </section>
 
         <section className="panel profile-panel"><div className="panel-heading"><div><h3>Informasi profil</h3><p>Data akun karyawan</p></div></div>
-          <div className="mini-profile"><div className="large-avatar">{(profile?.full_name || user.email || 'K').slice(0, 2).toUpperCase()}</div><div><b>{profile?.full_name || user.email}</b><span>{profile?.employee_code || 'Belum ada kode'} · {profile?.department || 'Belum ada departemen'}</span></div></div>
+          <div className="mini-profile"><div className="large-avatar">{(profile?.full_name || 'Karyawan').slice(0, 2).toUpperCase()}</div><div><b>{profile?.full_name || 'Karyawan'}</b><span>{profile?.employee_code || 'Belum ada kode'} · {profile?.department || 'Belum ada departemen'}</span></div></div>
           <div className="profile-line"><span>Departemen</span><b>{profile?.department || 'Belum diatur'}</b></div>
           <div className="profile-line"><span>Jadwal kerja</span><b>{schedule ? `${schedule.startTime} – ${schedule.endTime}` : '--:--'}</b></div>
           <div className="profile-line"><span>Status akun</span><b className="status-active">Aktif</b></div>
@@ -286,11 +278,5 @@ export default function Dashboard() {
       </div>
       <div className="preview-footnote">Foto dan data lokasi disimpan di Supabase. Check-in divalidasi terhadap radius kantor.</div>
     </div>
-  </main>
-    {showGreeting && <div className="employee-greeting-toast" role="status" aria-live="polite">
-      <span className="greeting-toast-icon"><Sparkles size={17}/></span>
-      <div><b>{greeting}{profile?.full_name ? `, ${profile.full_name}` : ''}!</b><span>Selamat datang di AbsenSozo.</span></div>
-      <button type="button" aria-label="Tutup sapaan" onClick={() => setShowGreeting(false)}><X size={15}/></button>
-    </div>}
-  </div>
+  </main></div>
 }
